@@ -16,6 +16,30 @@ hai người chỉnh các công việc khác nhau cùng lúc sẽ không ghi đ�
 
 ## Thiết lập một lần
 
+## Gửi email khi task thay đổi
+
+Web sẽ ghi yêu cầu gửi mail vào collection `mail` sau mỗi lần tạo, sửa hoặc xóa
+task. Để Firebase gửi email thật, cài extension **Trigger Email** và đặt
+**Mail collection** là `mail`; khi cài cần cung cấp SMTP của dịch vụ gửi mail
+(ví dụ SendGrid hoặc Mailgun). [Hướng dẫn chính thức](https://firebase.google.com/docs/extensions/official/firestore-send-email).
+
+Địa chỉ manager và PIC được đặt trong `notifications.js`. Trong đó đã cấu hình
+test cho nhân viên Hà (`e2`) và manager cùng nhận tại
+`nguyencattuong2401@gmail.com`; thêm PIC khác ngay dưới ghi chú trong tệp này.
+
+Khi test chưa có đăng nhập, thêm rule sau vào Firestore Rules (cùng cấp với
+`match /tcc/data`) để web có thể tạo yêu cầu gửi mail:
+
+```text
+match /mail/{mailId} {
+  allow create: if true;
+  allow read, update, delete: if false;
+}
+```
+
+Vì collection `mail` có thể kích hoạt gửi email, chỉ nên cho người dùng đã đăng
+nhập được ghi vào đó khi đưa lên môi trường thật.
+
 1. Tạo một project tại [Firebase Console](https://console.firebase.google.com/),
    thêm **Web app**, rồi bật **Cloud Firestore** (Production mode).
 2. Sao chép `firebase-config.example.js` thành `firebase-config.js` và dán cấu

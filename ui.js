@@ -57,6 +57,7 @@ async function addTask() {
   showTaskForm = false;
   render();
   await saveData((shared) => shared.tasks.push(task));
+  await queueTaskNotification("created", task);
 }
 
 async function saveTaskDetail() {
@@ -88,6 +89,7 @@ async function saveTaskDetail() {
     const task = shared.tasks.find((item) => item.id === id);
     if (task) Object.assign(task, changes);
   });
+  await queueTaskNotification("updated", { id, ...changes });
 }
 
 async function deleteSelectedTask() {
@@ -96,6 +98,7 @@ async function deleteSelectedTask() {
   const id = selectedTaskId;
   selectedTaskId = null;
   await deleteTask(id);
+  await queueTaskNotification("deleted", task);
 }
 
 function taskDetailDialog() {
