@@ -4,6 +4,16 @@
 thấy thay đổi gần như ngay lập tức. Mỗi thao tác ghi chạy trong transaction nên
 hai người chỉnh các công việc khác nhau cùng lúc sẽ không ghi đè dữ liệu nhau.
 
+## Cấu trúc source
+
+| Tệp | Vai trò |
+| --- | --- |
+| `index.html` | Khung HTML và nạp các thư viện/tệp ứng dụng. |
+| `styles.css` | Toàn bộ giao diện và bố cục responsive. |
+| `app.js` | State ứng dụng, thao tác công việc/nhân sự và đồng bộ Firebase. |
+| `dashboard.js` | Dashboard: KPI tiến độ, biểu đồ trạng thái, tải công việc và danh sách cần chú ý. |
+| `firebase-config.js` | Cấu hình Firebase của môi trường deploy. |
+
 ## Thiết lập một lần
 
 1. Tạo một project tại [Firebase Console](https://console.firebase.google.com/),
