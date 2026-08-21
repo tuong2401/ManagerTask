@@ -45,6 +45,7 @@ const STATUS_OPTS = [
   { key: "doing", label: "Đang thực hiện", color: "teal" },
   { key: "done", label: "Hoàn thành", color: "green" },
   { key: "close", label: "Close", color: "border-strong" },
+  { key: "reopen", label: "Reopen", color: "blue" },
 ];
 const PRIORITY = {
   high: { label: "Cao", color: "red" },

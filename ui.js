@@ -41,6 +41,18 @@ function closeTaskDetail() {
   render();
 }
 
+async function reopenTask(id) {
+  const task = tasks.find((item) => item.id === id);
+  if (!task) return;
+  if (!IS_CONFIGURED) task.status = "reopen";
+  render();
+  await saveData((shared) => {
+    const sharedTask = shared.tasks.find((item) => item.id === id);
+    if (sharedTask) sharedTask.status = "reopen";
+  });
+  await queueTaskNotification("updated", { ...task, status: "reopen" });
+}
+
 async function addTask() {
   const title = document.getElementById("f-title").value.trim();
   const assigneeId = document.getElementById("f-assignee").value;
@@ -153,8 +165,8 @@ function renderTaskForm() {
 
 function render() {
   if (!loaded) return;
-  const filteredTasks = tasks
-    .filter((task) => activeDepartment === "all" || taskDepartment(task) === activeDepartment)
+  const dashboardTasks = activeDepartment === "all" ? tasks : tasks.filter((task) => taskDepartment(task) === activeDepartment);
+  const filteredTasks = dashboardTasks
     // Close tasks are intentionally shown only in the completed dashboard card.
     .filter((task) => task.status !== "close")
     .slice()
@@ -167,7 +179,7 @@ function render() {
   app.innerHTML = `
     <div class="sync-bar" id="sync-bar"></div>
     <main class="workspace">
-      <section class="dashboard-section">${renderDashboard(tasks)}</section>
+      <section class="dashboard-section"><div class="dashboard-label">DASHBOARD · ${activeDepartment === "all" ? "Tất cả bộ phận" : departmentName(activeDepartment)}</div>${renderDashboard(dashboardTasks)}</section>
       <nav class="department-tabs" aria-label="Bộ phận">
         <button class="department-tab ${activeDepartment === "all" ? "active" : ""}" onclick="setDepartment('all')">Tất cả <span>${tasks.length}</span></button>
         ${DEPARTMENTS.map((item) => `<button class="department-tab ${activeDepartment === item.id ? "active" : ""}" onclick="setDepartment('${item.id}')">${item.label} <span>${tasks.filter((task) => taskDepartment(task) === item.id).length}</span></button>`).join("")}

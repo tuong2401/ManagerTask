@@ -35,7 +35,7 @@ function renderDashboard(tasksForDash) {
   const total = tasksForDash.length;
   const todoCount = tasksForDash.filter((t) => t.status === "todo").length;
   const doingCount = tasksForDash.filter((t) => t.status === "doing").length;
-  const doneCount = tasksForDash.filter((t) => t.status === "done" || t.status === "close").length;
+  const doneCount = tasksForDash.filter((t) => t.status === "done").length;
   const overdueCount = tasksForDash.filter((t) => isOverdue(t.endDate, t.status)).length;
   const completionRate = total ? Math.round((doneCount / total) * 100) : 0;
 
@@ -68,25 +68,25 @@ function renderDashboard(tasksForDash) {
       }).join("")
     : `<div class="empty-dash">Không có công việc quá hạn 🎉</div>`;
 
-  const recentDone = tasksForDash
-    .filter((t) => t.status === "done" || t.status === "close")
+  const closedTasks = tasksForDash
+    .filter((t) => t.status === "close")
     .slice()
     .sort((a, b) => (b.endDate || b.assignedDate || "").localeCompare(a.endDate || a.assignedDate || ""));
-  const recentHtml = recentDone.length
-    ? recentDone.slice(0, 8).map((t) => {
+  const closedHtml = closedTasks.length
+    ? closedTasks.slice(0, 8).map((t) => {
         const emp = employeeById(t.assigneeId);
         return `
-          <div class="recent-item">
+          <div class="recent-item closed-item">
             ${ic("check")}
             <div class="item-info">
               <div class="item-title">${escapeHtml(t.title)}</div>
               <div class="item-sub">${emp ? escapeHtml(emp.name) : "Chưa gán"}</div>
             </div>
-            <div class="item-date" style="color:var(--green)">${fmtDate(t.endDate)}</div>
+            <button class="reopen-btn" onclick="reopenTask('${t.id}')">Reopen</button>
           </div>
         `;
       }).join("")
-    : `<div class="empty-dash">Chưa có công việc nào hoàn thành.</div>`;
+    : `<div class="empty-dash">Chưa có công việc nào Close.</div>`;
 
   return `
     <div class="dash-grid">
@@ -107,8 +107,8 @@ function renderDashboard(tasksForDash) {
         <div class="alert-list">${overdueHtml}</div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-head">${ic("check")} Công việc đã hoàn thành</div>
-        <div class="recent-list">${recentHtml}</div>
+        <div class="dash-card-head">${ic("check")} Công việc đã Close</div>
+        <div class="recent-list">${closedHtml}</div>
       </div>
     </div>
   `;
