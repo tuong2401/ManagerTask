@@ -204,6 +204,8 @@
 <div id="app"><div style="padding:40px;text-align:center;color:#93a1ab;font-family:'IBM Plex Mono',monospace;font-size:12px;">Đang tải dữ liệu...</div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Copy firebase-config.example.js to firebase-config.js and enter your project values. -->
+<script src="firebase-config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script>
@@ -213,7 +215,7 @@
    Nếu để nguyên như mặc định, app sẽ chạy "chế độ xem thử" (không lưu
    thật, mất dữ liệu khi tải lại trang) để bạn preview UI trước.
    ===================================================================== */
-const FIREBASE_CONFIG = {
+const DEFAULT_FIREBASE_CONFIG = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
   projectId: "YOUR_PROJECT_ID",
@@ -221,7 +223,10 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "YOUR_SENDER_ID",
   appId: "YOUR_APP_ID",
 };
-const IS_CONFIGURED = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+// firebase-config.js defines window.FIREBASE_CONFIG when the app is deployed.
+const FIREBASE_CONFIG = window.FIREBASE_CONFIG || DEFAULT_FIREBASE_CONFIG;
+const IS_CONFIGURED = ["apiKey", "authDomain", "projectId", "appId"]
+  .every((key) => FIREBASE_CONFIG[key] && !FIREBASE_CONFIG[key].startsWith("YOUR_"));
 let db = null;
 if (IS_CONFIGURED) {
   firebase.initializeApp(FIREBASE_CONFIG);
@@ -378,7 +383,10 @@ function initStorage() {
       } else {
         employees = seedEmployees.slice();
         tasks = seedTasks.slice();
-        docRef.set({ employees, tasks }).catch(() => {});
+        // Only seed on the first visit. Later changes use a transaction.
+        db.runTransaction((transaction) => transaction.get(docRef).then((current) => {
+          if (!current.exists) transaction.set(docRef, { employees, tasks });
+        })).catch(() => {});
       }
       loaded = true; syncing = false; syncError = ""; lastSync = new Date();
       render();
@@ -392,12 +400,23 @@ function initStorage() {
   );
 }
 
-async function saveData() {
+async function saveData(change) {
   if (!IS_CONFIGURED) return;
   syncing = true; syncError = "";
   renderSyncBar();
   try {
-    await db.collection("tcc").doc("data").set({ employees, tasks });
+    const docRef = db.collection("tcc").doc("data");
+    await db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(docRef);
+      const serverData = snap.exists ? snap.data() : {};
+      const shared = {
+        employees: Array.isArray(serverData.employees) ? serverData.employees : [],
+        tasks: Array.isArray(serverData.tasks) ? serverData.tasks : [],
+      };
+      // Firestore retries this if another user saves concurrently.
+      change(shared);
+      transaction.set(docRef, shared);
+    });
     lastSync = new Date();
   } catch (e) {
     syncError = e.code === "permission-denied"
@@ -422,10 +441,11 @@ async function addTask() {
     if (errEl) errEl.textContent = "Vui lòng nhập tên công việc và chọn người phụ trách.";
     return;
   }
-  tasks.push({ id: uid("t"), title, assigneeId: assignee, priority, status: "todo", assignedDate, startDate, endDate, notes });
+  const task = { id: uid("t"), title, assigneeId: assignee, priority, status: "todo", assignedDate, startDate, endDate, notes };
+  if (!IS_CONFIGURED) tasks.push(task);
   showTaskForm = false;
   render();
-  await saveData();
+  await saveData((shared) => shared.tasks.push(task));
 }
 
 async function addEmployee() {
@@ -436,33 +456,49 @@ async function addEmployee() {
     if (errEl) errEl.textContent = "Vui lòng nhập tên nhân viên.";
     return;
   }
-  const color = PALETTE[employees.length % PALETTE.length];
-  employees.push({ id: uid("e"), name, role: role || "Nhân viên", color });
+  const employee = { id: uid("e"), name, role: role || "Nhân viên", color: "blue" };
+  if (!IS_CONFIGURED) {
+    employee.color = PALETTE[employees.length % PALETTE.length];
+    employees.push(employee);
+  }
   showEmpForm = false;
   render();
-  await saveData();
+  await saveData((shared) => {
+    employee.color = PALETTE[shared.employees.length % PALETTE.length];
+    shared.employees.push(employee);
+  });
 }
 
 async function deleteTask(id) {
-  tasks = tasks.filter((t) => t.id !== id);
+  if (!IS_CONFIGURED) tasks = tasks.filter((t) => t.id !== id);
   render();
-  await saveData();
+  await saveData((shared) => { shared.tasks = shared.tasks.filter((t) => t.id !== id); });
 }
 
 async function setStatus(id, newStatus) {
-  const t = tasks.find((x) => x.id === id);
-  if (!t) return;
-  t.status = newStatus;
+  if (!IS_CONFIGURED) {
+    const t = tasks.find((x) => x.id === id);
+    if (!t) return;
+    t.status = newStatus;
+  }
   render();
-  await saveData();
+  await saveData((shared) => {
+    const t = shared.tasks.find((x) => x.id === id);
+    if (t) t.status = newStatus;
+  });
 }
 
 async function updateField(id, field, value) {
-  const t = tasks.find((x) => x.id === id);
-  if (!t) return;
-  t[field] = value;
+  if (!IS_CONFIGURED) {
+    const t = tasks.find((x) => x.id === id);
+    if (!t) return;
+    t[field] = value;
+  }
   render();
-  await saveData();
+  await saveData((shared) => {
+    const t = shared.tasks.find((x) => x.id === id);
+    if (t) t[field] = value;
+  });
 }
 
 function toggleFilter(id) {
@@ -472,10 +508,15 @@ function toggleFilter(id) {
 
 async function resetData() {
   if (!confirm("Xoá toàn bộ dữ liệu hiện tại và khôi phục dữ liệu mẫu? Hành động này ảnh hưởng đến tất cả mọi người đang dùng chung.")) return;
-  employees = seedEmployees.slice();
-  tasks = seedTasks.slice();
+  if (!IS_CONFIGURED) {
+    employees = seedEmployees.slice();
+    tasks = seedTasks.slice();
+  }
   render();
-  await saveData();
+  await saveData((shared) => {
+    shared.employees = seedEmployees.slice();
+    shared.tasks = seedTasks.slice();
+  });
 }
 
 function exportExcel() {
