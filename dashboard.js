@@ -35,7 +35,7 @@ function renderDashboard(tasksForDash) {
   const total = tasksForDash.length;
   const todoCount = tasksForDash.filter((t) => t.status === "todo").length;
   const doingCount = tasksForDash.filter((t) => t.status === "doing").length;
-  const doneCount = tasksForDash.filter((t) => t.status === "done").length;
+  const doneCount = tasksForDash.filter((t) => t.status === "done" || t.status === "close").length;
   const overdueCount = tasksForDash.filter((t) => isOverdue(t.endDate, t.status)).length;
   const completionRate = total ? Math.round((doneCount / total) * 100) : 0;
 
@@ -47,33 +47,6 @@ function renderDashboard(tasksForDash) {
     ],
     { centerLabel: completionRate + "%", centerSub: "hoàn thành" }
   );
-
-  const empList = filterId ? employees.filter((e) => e.id === filterId) : employees;
-  const empCounts = empList.map((e) => tasksForDash.filter((t) => t.assigneeId === e.id).length);
-  const maxEmpCount = Math.max(1, ...empCounts, 0);
-
-  const empBars = empList.length
-    ? empList.map((e) => {
-        const empTasks = tasksForDash.filter((t) => t.assigneeId === e.id);
-        const cnt = empTasks.length;
-        const done = empTasks.filter((t) => t.status === "done").length;
-        const pct = maxEmpCount ? (cnt / maxEmpCount) * 100 : 0;
-        const donePct = cnt ? (done / cnt) * 100 : 0;
-        return `
-          <div class="emp-bar-row">
-            <div class="emp-bar-top">
-              <span class="emp-bar-name"><span class="dot" style="background:var(--${e.color})"></span><span>${escapeHtml(e.name)}</span></span>
-              <span class="emp-bar-count">${done}/${cnt} hoàn thành</span>
-            </div>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:${pct}%;background:var(--${e.color}-soft)">
-                <div class="bar-fill-done" style="width:${donePct}%;background:var(--${e.color})"></div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join("")
-    : `<div class="empty-dash">Chưa có nhân sự nào.</div>`;
 
   const overdueTasks = tasksForDash
     .filter((t) => isOverdue(t.endDate, t.status))
@@ -96,7 +69,7 @@ function renderDashboard(tasksForDash) {
     : `<div class="empty-dash">Không có công việc quá hạn 🎉</div>`;
 
   const recentDone = tasksForDash
-    .filter((t) => t.status === "done")
+    .filter((t) => t.status === "done" || t.status === "close")
     .slice()
     .sort((a, b) => (b.endDate || b.assignedDate || "").localeCompare(a.endDate || a.assignedDate || ""));
   const recentHtml = recentDone.length
@@ -130,15 +103,11 @@ function renderDashboard(tasksForDash) {
         </div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-head">${ic("users")} Công việc theo nhân viên</div>
-        ${empBars}
-      </div>
-      <div class="dash-card">
         <div class="dash-card-head">${ic("alert")} Cần chú ý (quá hạn)</div>
         <div class="alert-list">${overdueHtml}</div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-head">${ic("check")} Hoàn thành gần đây</div>
+        <div class="dash-card-head">${ic("check")} Công việc đã hoàn thành</div>
         <div class="recent-list">${recentHtml}</div>
       </div>
     </div>

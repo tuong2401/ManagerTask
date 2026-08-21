@@ -44,6 +44,7 @@ const STATUS_OPTS = [
   { key: "todo", label: "Chờ xử lý", color: "amber" },
   { key: "doing", label: "Đang thực hiện", color: "teal" },
   { key: "done", label: "Hoàn thành", color: "green" },
+  { key: "close", label: "Close", color: "border-strong" },
 ];
 const PRIORITY = {
   high: { label: "Cao", color: "red" },
@@ -138,7 +139,7 @@ let lastSync = null;
 
 function uid(prefix) { return prefix + Math.random().toString(36).slice(2, 9); }
 function isOverdue(endDate, status) {
-  if (!endDate || status === "done") return false;
+  if (!endDate || status === "done" || status === "close") return false;
   const today = new Date(); today.setHours(0,0,0,0);
   return new Date(endDate + "T00:00:00") < today;
 }

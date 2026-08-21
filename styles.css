@@ -205,6 +205,8 @@
   .section-kicker, .modal-kicker { color: var(--text-faint); font: 10px 'IBM Plex Mono', monospace; letter-spacing: .08em; }
   .task-row { cursor: pointer; }
   .task-row:focus { outline: 2px solid var(--blue); outline-offset: -2px; }
+  .task-sort { display: inline-flex; align-items: center; gap: 6px; color: var(--text-dim); font-size: 11px; white-space: nowrap; }
+  .task-sort select { padding: 7px 9px; font-size: 12px; }
   .modal-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(20, 34, 44, .44); display: grid; place-items: center; padding: 18px; }
   .task-modal { width: min(700px, 100%); max-height: calc(100vh - 36px); overflow: auto; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 12px; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,.18); }
   .modal-head, .modal-actions { display: flex; align-items: center; gap: 9px; }

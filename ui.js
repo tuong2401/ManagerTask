@@ -10,6 +10,7 @@ const DEFAULT_DEPARTMENT = "electrical";
 const TASK_TABLE_HEADERS = ["Công việc", "Bộ phận", "Người phụ trách", "Ưu tiên", "Trạng thái", "Hạn hoàn thành", "Ghi chú"];
 let activeDepartment = "all";
 let selectedTaskId = null;
+let taskSort = "default";
 
 function taskDepartment(task) {
   return task.department || DEFAULT_DEPARTMENT;
@@ -22,6 +23,11 @@ function departmentName(id) {
 
 function setDepartment(id) {
   activeDepartment = id;
+  render();
+}
+
+function setTaskSort(value) {
+  taskSort = value;
   render();
 }
 
@@ -147,7 +153,16 @@ function renderTaskForm() {
 
 function render() {
   if (!loaded) return;
-  const filteredTasks = activeDepartment === "all" ? tasks : tasks.filter((task) => taskDepartment(task) === activeDepartment);
+  const filteredTasks = tasks
+    .filter((task) => activeDepartment === "all" || taskDepartment(task) === activeDepartment)
+    // Close tasks are intentionally shown only in the completed dashboard card.
+    .filter((task) => task.status !== "close")
+    .slice()
+    .sort((a, b) => {
+      if (taskSort === "employee-asc") return (employeeById(a.assigneeId)?.name || "").localeCompare(employeeById(b.assigneeId)?.name || "", "vi");
+      if (taskSort === "employee-desc") return (employeeById(b.assigneeId)?.name || "").localeCompare(employeeById(a.assigneeId)?.name || "", "vi");
+      return 0;
+    });
   const app = document.getElementById("app");
   app.innerHTML = `
     <div class="sync-bar" id="sync-bar"></div>
@@ -158,7 +173,7 @@ function render() {
         ${DEPARTMENTS.map((item) => `<button class="department-tab ${activeDepartment === item.id ? "active" : ""}" onclick="setDepartment('${item.id}')">${item.label} <span>${tasks.filter((task) => taskDepartment(task) === item.id).length}</span></button>`).join("")}
       </nav>
       <section class="task-section">
-        <div class="toolbar"><div><div class="section-kicker">CÔNG VIỆC</div><h1>${activeDepartment === "all" ? "Tất cả công việc" : departmentName(activeDepartment)}</h1></div><div class="toolbar-actions"><button class="export-btn" onclick="exportExcel()">${ic("download")} Xuất Excel</button><button class="add-task-btn" onclick="showTaskForm=!showTaskForm;render()">${ic("plus")} Thêm công việc</button></div></div>
+        <div class="toolbar"><div><div class="section-kicker">CÔNG VIỆC</div><h1>${activeDepartment === "all" ? "Tất cả công việc" : departmentName(activeDepartment)}</h1></div><div class="toolbar-actions"><label class="task-sort">Sắp xếp <select onchange="setTaskSort(this.value)"><option value="default" ${taskSort === "default" ? "selected" : ""}>Mặc định</option><option value="employee-asc" ${taskSort === "employee-asc" ? "selected" : ""}>Nhân viên A–Z</option><option value="employee-desc" ${taskSort === "employee-desc" ? "selected" : ""}>Nhân viên Z–A</option></select></label><button class="export-btn" onclick="exportExcel()">${ic("download")} Xuất Excel</button><button class="add-task-btn" onclick="showTaskForm=!showTaskForm;render()">${ic("plus")} Thêm công việc</button></div></div>
         ${renderTaskForm()}
         <div class="table-wrap"><table class="tasks"><thead><tr>${TASK_TABLE_HEADERS.map((label) => `<th>${escapeHtml(label)}</th>`).join("")}</tr></thead><tbody>
           ${filteredTasks.length ? filteredTasks.map((task) => { const emp = employeeById(task.assigneeId); const priority = PRIORITY[task.priority] || PRIORITY.medium; const status = statusInfo(task.status); return `<tr class="task-row" tabindex="0" onclick="openTask('${task.id}')" onkeydown="if(event.key==='Enter')openTask('${task.id}')"><td class="col-title">${escapeHtml(task.title)}</td><td>${departmentName(taskDepartment(task))}</td><td class="col-assignee">${emp ? escapeHtml(emp.name) : "Chưa gán"}</td><td><span class="badge mono" style="color:var(--${priority.color});border-color:var(--${priority.color})">${priority.label}</span></td><td><span class="badge mono" style="color:var(--${status.color});border-color:var(--${status.color})">${status.label}</span></td><td class="col-date">${fmtDate(task.endDate)}</td><td class="col-notes">${escapeHtml(task.notes || "")}</td></tr>`; }).join("") : `<tr><td colspan="7" class="empty-table">Chưa có công việc trong bộ phận này.</td></tr>`}
