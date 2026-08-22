@@ -45,7 +45,7 @@ function renderDashboard(tasksForDash) {
       { value: doingCount, color: "teal" },
       { value: doneCount, color: "green" },
     ],
-    { centerLabel: completionRate + "%", centerSub: "hoàn thành" }
+    { centerLabel: completionRate + "%", centerSub: t("donutDoneSub") }
   );
 
   const overdueTasks = tasksForDash
@@ -53,61 +53,61 @@ function renderDashboard(tasksForDash) {
     .slice()
     .sort((a, b) => (a.endDate || "").localeCompare(b.endDate || ""));
   const overdueHtml = overdueTasks.length
-    ? overdueTasks.slice(0, 8).map((t) => {
-        const emp = employeeById(t.assigneeId);
+    ? overdueTasks.slice(0, 8).map((task) => {
+        const emp = employeeById(task.assigneeId);
         return `
           <div class="alert-item">
             ${ic("alert")}
             <div class="item-info">
-              <div class="item-title">${escapeHtml(t.title)}</div>
-              <div class="item-sub">${emp ? escapeHtml(emp.name) : "Chưa gán"}</div>
+              <div class="item-title">${escapeHtml(task.title)}</div>
+              <div class="item-sub">${emp ? escapeHtml(emp.name) : t("unassigned")}</div>
             </div>
-            <div class="item-date" style="color:var(--red)">${fmtDate(t.endDate)}</div>
+            <div class="item-date" style="color:var(--red)">${fmtDate(task.endDate)}</div>
           </div>
         `;
       }).join("")
-    : `<div class="empty-dash">Không có công việc quá hạn 🎉</div>`;
+    : `<div class="empty-dash">${t("noOverdue")}</div>`;
 
   const closedTasks = tasksForDash
     .filter((t) => t.status === "close")
     .slice()
     .sort((a, b) => (b.endDate || b.assignedDate || "").localeCompare(a.endDate || a.assignedDate || ""));
   const closedHtml = closedTasks.length
-    ? closedTasks.slice(0, 8).map((t) => {
-        const emp = employeeById(t.assigneeId);
+    ? closedTasks.slice(0, 8).map((task) => {
+        const emp = employeeById(task.assigneeId);
         return `
           <div class="recent-item closed-item">
             ${ic("check")}
             <div class="item-info">
-              <div class="item-title">${escapeHtml(t.title)}</div>
-              <div class="item-sub">${emp ? escapeHtml(emp.name) : "Chưa gán"}</div>
+              <div class="item-title">${escapeHtml(task.title)}</div>
+              <div class="item-sub">${emp ? escapeHtml(emp.name) : t("unassigned")}</div>
             </div>
-            <button class="reopen-btn" onclick="reopenTask('${t.id}')">Reopen</button>
+            <button class="reopen-btn" onclick="reopenTask('${task.id}')">${t("statusReopen")}</button>
           </div>
         `;
       }).join("")
-    : `<div class="empty-dash">Chưa có công việc nào Close.</div>`;
+    : `<div class="empty-dash">${t("noClosed")}</div>`;
 
   return `
     <div class="dash-grid">
       <div class="dash-card">
-        <div class="dash-card-head">${ic("grid")} Trạng thái công việc</div>
+        <div class="dash-card-head">${ic("grid")} ${t("dashStatusCard")}</div>
         <div class="donut-row">
           ${statusDonut}
           <div class="donut-legend">
-            <div class="legend-item"><span class="dot" style="background:var(--amber)"></span><span class="legend-label">Chờ xử lý</span><span class="legend-value mono">${todoCount}</span></div>
-            <div class="legend-item"><span class="dot" style="background:var(--teal)"></span><span class="legend-label">Đang thực hiện</span><span class="legend-value mono">${doingCount}</span></div>
-            <div class="legend-item"><span class="dot" style="background:var(--green)"></span><span class="legend-label">Hoàn thành</span><span class="legend-value mono">${doneCount}</span></div>
-            <div class="legend-item"><span class="dot" style="background:var(--red)"></span><span class="legend-label">Quá hạn</span><span class="legend-value mono">${overdueCount}</span></div>
+            <div class="legend-item"><span class="dot" style="background:var(--amber)"></span><span class="legend-label">${t("statusTodo")}</span><span class="legend-value mono">${todoCount}</span></div>
+            <div class="legend-item"><span class="dot" style="background:var(--teal)"></span><span class="legend-label">${t("statusDoing")}</span><span class="legend-value mono">${doingCount}</span></div>
+            <div class="legend-item"><span class="dot" style="background:var(--green)"></span><span class="legend-label">${t("statusDone")}</span><span class="legend-value mono">${doneCount}</span></div>
+            <div class="legend-item"><span class="dot" style="background:var(--red)"></span><span class="legend-label">${t("statOverdue")}</span><span class="legend-value mono">${overdueCount}</span></div>
           </div>
         </div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-head">${ic("alert")} Cần chú ý (quá hạn)</div>
+        <div class="dash-card-head">${ic("alert")} ${t("dashAttentionCard")}</div>
         <div class="alert-list">${overdueHtml}</div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-head">${ic("check")} Công việc đã Close</div>
+        <div class="dash-card-head">${ic("check")} ${t("dashClosedCard")}</div>
         <div class="recent-list">${closedHtml}</div>
       </div>
     </div>

@@ -10,9 +10,22 @@ hai người chỉnh các công việc khác nhau cùng lúc sẽ không ghi đ�
 | --- | --- |
 | `index.html` | Khung HTML và nạp các thư viện/tệp ứng dụng. |
 | `styles.css` | Toàn bộ giao diện và bố cục responsive. |
+| `i18n.js` | Từ điển song ngữ (Tiếng Việt / English) và hàm `t()` dùng để dịch giao diện. |
 | `app.js` | State ứng dụng, thao tác công việc/nhân sự và đồng bộ Firebase. |
 | `dashboard.js` | Dashboard: KPI tiến độ, biểu đồ trạng thái, tải công việc và danh sách cần chú ý. |
 | `firebase-config.js` | Cấu hình Firebase của môi trường deploy. |
+
+## Chuyển đổi ngôn ngữ VI / EN
+
+Góc trên bên phải thanh trạng thái (ngay dưới header) có công tắc **VI / EN** để
+đổi ngôn ngữ giao diện — bảng công việc, dashboard, form, hộp thoại chi tiết và
+file Excel xuất ra đều đổi theo. Lựa chọn ngôn ngữ được lưu trong trình duyệt
+(`localStorage`) nên lần sau mở lại web sẽ giữ nguyên ngôn ngữ đã chọn.
+
+Dữ liệu mẫu (tên nhân viên, tên công việc, ghi chú) và nội dung email thông báo
+trong `notifications.js` vẫn giữ nguyên tiếng Việt vì đây là dữ liệu người dùng
+nhập, không phải chữ trong giao diện. Muốn thêm/sửa chữ dịch, chỉnh trong
+`i18n.js` (mỗi khoá có bản `vi` và `en`).
 
 ## Thiết lập một lần
 

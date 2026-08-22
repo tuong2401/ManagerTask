@@ -40,17 +40,19 @@ function ic(name) { return '<svg class="ic" viewBox="0 0 24 24">' + ICONS[name] 
 
 /* ===================== DATA ===================== */
 const PALETTE = ["blue", "teal", "green", "amber", "red"];
+// `label` stays Vietnamese (used for email notifications and Excel export);
+// `labelKey` looks up the current UI language via t() for on-screen display.
 const STATUS_OPTS = [
-  { key: "todo", label: "Chờ xử lý", color: "amber" },
-  { key: "doing", label: "Đang thực hiện", color: "teal" },
-  { key: "done", label: "Hoàn thành", color: "green" },
-  { key: "close", label: "Close", color: "border-strong" },
-  { key: "reopen", label: "Reopen", color: "blue" },
+  { key: "todo", label: "Chờ xử lý", labelKey: "statusTodo", color: "amber" },
+  { key: "doing", label: "Đang thực hiện", labelKey: "statusDoing", color: "teal" },
+  { key: "done", label: "Hoàn thành", labelKey: "statusDone", color: "green" },
+  { key: "close", label: "Close", labelKey: "statusClose", color: "border-strong" },
+  { key: "reopen", label: "Reopen", labelKey: "statusReopen", color: "blue" },
 ];
 const PRIORITY = {
-  high: { label: "Cao", color: "red" },
-  medium: { label: "Trung bình", color: "amber" },
-  low: { label: "Thấp", color: "border-strong" },
+  high: { label: "Cao", labelKey: "priorityHigh", color: "red" },
+  medium: { label: "Trung bình", labelKey: "priorityMedium", color: "amber" },
+  low: { label: "Thấp", labelKey: "priorityLow", color: "border-strong" },
 };
 
 const seedEmployees = [
@@ -146,11 +148,11 @@ function isOverdue(endDate, status) {
 }
 function fmtDate(d) {
   if (!d) return "—";
-  return new Date(d + "T00:00:00").toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(d + "T00:00:00").toLocaleDateString(dateLocale(), { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 function fmtTime(d) {
   if (!d) return "";
-  return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return d.toLocaleTimeString(dateLocale(), { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 function employeeById(id) { return employees.find((e) => e.id === id); }
 function taskCountFor(empId) { return tasks.filter((t) => t.assigneeId === empId).length; }
@@ -185,8 +187,8 @@ function initStorage() {
     },
     (err) => {
       syncError = err.code === "permission-denied"
-        ? "Không có quyền truy cập Firestore - kiểm tra lại Security Rules."
-        : "Mất kết nối tới Firestore.";
+        ? t("syncPermissionRead")
+        : t("syncConnectionLost");
       loaded = true; syncing = false; render();
     }
   );
@@ -212,8 +214,8 @@ async function saveData(change) {
     lastSync = new Date();
   } catch (e) {
     syncError = e.code === "permission-denied"
-      ? "Không có quyền ghi dữ liệu - kiểm tra lại Security Rules."
-      : "Lưu dữ liệu thất bại, vui lòng thử lại.";
+      ? t("syncPermissionWrite")
+      : t("syncSaveFailed");
   }
   syncing = false;
   renderSyncBar();
@@ -312,38 +314,47 @@ async function resetData() {
 }
 
 function exportExcel() {
-  const taskRows = tasks.map((t) => {
-    const emp = employeeById(t.assigneeId);
+  const taskRows = tasks.map((task) => {
+    const emp = employeeById(task.assigneeId);
     return {
-      "Tên công việc": t.title,
-      "Người phụ trách": emp ? emp.name : "Chưa gán",
-      "Độ ưu tiên": PRIORITY[t.priority] ? PRIORITY[t.priority].label : t.priority,
-      "Trạng thái": statusInfo(t.status).label,
-      "Ngày giao": t.assignedDate ? fmtDate(t.assignedDate) : "",
-      "Ngày bắt đầu": t.startDate ? fmtDate(t.startDate) : "",
-      "Ngày kết thúc": t.endDate ? fmtDate(t.endDate) : "",
-      "Quá hạn": isOverdue(t.endDate, t.status) ? "Có" : "Không",
-      "Ghi chú": t.notes || "",
+      [t("expTaskName")]: task.title,
+      [t("expAssignee")]: emp ? emp.name : t("unassigned"),
+      [t("expPriority")]: PRIORITY[task.priority] ? t(PRIORITY[task.priority].labelKey) : task.priority,
+      [t("expStatus")]: t(statusInfo(task.status).labelKey),
+      [t("expAssignedDate")]: task.assignedDate ? fmtDate(task.assignedDate) : "",
+      [t("expStartDate")]: task.startDate ? fmtDate(task.startDate) : "",
+      [t("expEndDate")]: task.endDate ? fmtDate(task.endDate) : "",
+      [t("expOverdue")]: isOverdue(task.endDate, task.status) ? t("expYes") : t("expNo"),
+      [t("expNotes")]: task.notes || "",
     };
   });
   const empRows = employees.map((e) => ({
-    "Tên nhân viên": e.name, "Chức vụ": e.role, "Số công việc": taskCountFor(e.id),
+    [t("expEmpName")]: e.name, [t("expEmpRole")]: e.role, [t("expEmpTaskCount")]: taskCountFor(e.id),
   }));
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(taskRows), "Công việc");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(empRows), "Nhân sự");
-  XLSX.writeFile(wb, "cong-viec-" + new Date().toISOString().slice(0, 10) + ".xlsx");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(taskRows), t("expSheetTasks"));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(empRows), t("expSheetEmployees"));
+  XLSX.writeFile(wb, t("expFilePrefix") + new Date().toISOString().slice(0, 10) + ".xlsx");
 }
 
 /* ===================== RENDER ===================== */
+function langSwitchHtml() {
+  return `
+    <div class="lang-switch">
+      <button type="button" class="lang-btn ${currentLang === "vi" ? "active" : ""}" onclick="setLang('vi')">VI</button>
+      <button type="button" class="lang-btn ${currentLang === "en" ? "active" : ""}" onclick="setLang('en')">EN</button>
+    </div>
+  `;
+}
+
 function renderSyncBar() {
   const el = document.getElementById("sync-bar");
   if (!el) return;
   if (!IS_CONFIGURED) {
-    el.innerHTML = `<div class="demo-banner">${ic("alert")} Chế độ xem thử: chưa cấu hình Firebase, dữ liệu chỉ tồn tại trong phiên này và <b>không dùng chung được với người khác</b>.</div>`;
+    el.innerHTML = `<div class="demo-banner">${ic("alert")} ${t("syncDemoBanner")}</div>${langSwitchHtml()}`;
     return;
   }
-  el.innerHTML = `<span class="shared-note">${ic("users")} Dữ liệu dùng chung cho cả nhóm, đồng bộ tức thời ${syncing ? "· đang lưu..." : lastSync ? "· cập nhật lúc " + fmtTime(lastSync) : ""}${syncError ? `<span class="sync-error"> · ${syncError}</span>` : ""}</span>`;
+  el.innerHTML = `<span class="shared-note">${ic("users")} ${t("syncSharedNote")} ${syncing ? t("syncSaving") : lastSync ? t("syncUpdatedAt", fmtTime(lastSync)) : ""}${syncError ? `<span class="sync-error"> · ${syncError}</span>` : ""}</span>${langSwitchHtml()}`;
 }
 
 function render() {
