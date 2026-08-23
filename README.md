@@ -1,81 +1,57 @@
-# ManagerTask – dữ liệu dùng chung khi deploy
+# Task Working Tazmo Việt Nam — Cấu trúc source code
 
-Ứng dụng dùng **Firebase Firestore** để mọi người đang mở cùng bản deploy nhìn
-thấy thay đổi gần như ngay lập tức. Mỗi thao tác ghi chạy trong transaction nên
-hai người chỉnh các công việc khác nhau cùng lúc sẽ không ghi đè dữ liệu nhau.
+App đã được tách từ 1 file HTML duy nhất thành nhiều file nhỏ theo chức năng để
+dễ quản lý và chỉnh sửa. Đây **không phải ES module** — tất cả file JS dùng
+chung 1 global scope (giống hệt code gốc), nên khi mở `index.html` bằng cách
+double-click (file://) vẫn chạy bình thường, không cần server.
 
-## Cấu trúc source
+## Cấu trúc thư mục
 
-| Tệp | Vai trò |
-| --- | --- |
-| `index.html` | Khung HTML và nạp các thư viện/tệp ứng dụng. |
-| `styles.css` | Toàn bộ giao diện và bố cục responsive. |
-| `i18n.js` | Từ điển song ngữ (Tiếng Việt / English) và hàm `t()` dùng để dịch giao diện. |
-| `app.js` | State ứng dụng, thao tác công việc/nhân sự và đồng bộ Firebase. |
-| `dashboard.js` | Dashboard: KPI tiến độ, biểu đồ trạng thái, tải công việc và danh sách cần chú ý. |
-| `firebase-config.js` | Cấu hình Firebase của môi trường deploy. |
-
-## Chuyển đổi ngôn ngữ VI / EN
-
-Góc trên bên phải thanh trạng thái (ngay dưới header) có công tắc **VI / EN** để
-đổi ngôn ngữ giao diện — bảng công việc, dashboard, form, hộp thoại chi tiết và
-file Excel xuất ra đều đổi theo. Lựa chọn ngôn ngữ được lưu trong trình duyệt
-(`localStorage`) nên lần sau mở lại web sẽ giữ nguyên ngôn ngữ đã chọn.
-
-Dữ liệu mẫu (tên nhân viên, tên công việc, ghi chú) và nội dung email thông báo
-trong `notifications.js` vẫn giữ nguyên tiếng Việt vì đây là dữ liệu người dùng
-nhập, không phải chữ trong giao diện. Muốn thêm/sửa chữ dịch, chỉnh trong
-`i18n.js` (mỗi khoá có bản `vi` và `en`).
-
-## Thiết lập một lần
-
-## Gửi email khi task thay đổi
-
-Web sẽ ghi yêu cầu gửi mail vào collection `mail` sau mỗi lần tạo, sửa hoặc xóa
-task. Để Firebase gửi email thật, cài extension **Trigger Email** và đặt
-**Mail collection** là `mail`; khi cài cần cung cấp SMTP của dịch vụ gửi mail
-(ví dụ SendGrid hoặc Mailgun). [Hướng dẫn chính thức](https://firebase.google.com/docs/extensions/official/firestore-send-email).
-
-Địa chỉ manager và PIC được đặt trong `notifications.js`. Trong đó đã cấu hình
-test cho nhân viên Hà (`e2`) và manager cùng nhận tại
-`nguyencattuong2401@gmail.com`; thêm PIC khác ngay dưới ghi chú trong tệp này.
-
-Khi test chưa có đăng nhập, thêm rule sau vào Firestore Rules (cùng cấp với
-`match /tcc/data`) để web có thể tạo yêu cầu gửi mail:
-
-```text
-match /mail/{mailId} {
-  allow create: if true;
-  allow read, update, delete: if false;
-}
+```
+├── index.html              ← file khởi động, chỉ chứa khung HTML + load CSS/JS
+├── css/
+│   └── style.css           ← toàn bộ CSS (tất cả trang dùng chung 1 file)
+└── js/
+    ├── 01-config.js            Cấu hình Firebase + bộ icon SVG
+    ├── 02-data.js               Hằng số + dữ liệu mẫu (seed data)
+    ├── 03-state.js              Biến trạng thái toàn cục (state) của app
+    ├── 04-utils.js              Hàm tiện ích dùng chung (ngày tháng, escape HTML...)
+    ├── 05-storage.js            Đồng bộ Firebase Firestore / chế độ xem thử
+    ├── 06-auth.js               Đăng nhập / đăng xuất
+    ├── 07-navigation.js         Điều hướng Tổng quan ↔ Bộ phận
+    ├── 08-actions-department.js Thao tác thêm bộ phận
+    ├── 09-actions-employee.js   Thao tác nhân viên
+    ├── 10-actions-leave.js      Thao tác đơn nghỉ phép
+    ├── 11-calendar.js           Lịch đi làm
+    ├── 12-actions-task.js       Thao tác công việc (CRUD) + modal chi tiết
+    ├── 13-actions-machine.js    Thao tác máy
+    ├── 14-data-tools.js         Khôi phục dữ liệu mẫu & Xuất Excel
+    ├── 15-donut.js              Hàm dựng biểu đồ donut (SVG)
+    ├── 16-dashboard.js          Khối Dashboard dùng chung (Tổng quan + Bộ phận)
+    ├── 17-page-overview.js      Trang TỔNG QUAN
+    ├── 18-page-department.js    Trang BỘ PHẬN (Dashboard/Nhân viên/Task/Máy)
+    ├── 19-modal-task.js         Modal xem/sửa 1 công việc
+    ├── 20-page-login.js         Trang ĐĂNG NHẬP
+    └── 21-app.js                Điểm khởi động app — PHẢI nạp SAU CÙNG
 ```
 
-Vì collection `mail` có thể kích hoạt gửi email, chỉ nên cho người dùng đã đăng
-nhập được ghi vào đó khi đưa lên môi trường thật.
+## Nguyên tắc khi sửa code
 
-1. Tạo một project tại [Firebase Console](https://console.firebase.google.com/),
-   thêm **Web app**, rồi bật **Cloud Firestore** (Production mode).
-2. Sao chép `firebase-config.example.js` thành `firebase-config.js` và dán cấu
-   hình Web app Firebase vào đó. Đặt `firebase-config.js` cùng thư mục với
-   `index.html` trước khi deploy. Cấu hình Web Firebase không phải khóa bí mật;
-   quyền truy cập thực tế được bảo vệ bằng Firestore Rules.
-3. Trong Firestore Database → **Rules**, dùng quy tắc sau cho một trang nội bộ
-   chưa có đăng nhập:
+- **Thứ tự nạp file trong `index.html` rất quan trọng** — không đảo thứ tự,
+  vì file sau dùng biến/hàm khai báo ở file trước (state, data, utils phải
+  nạp trước; `21-app.js` gọi `initStorage()` nên luôn nạp cuối cùng).
+- **Sửa dữ liệu mẫu / cấu hình Firebase**: `js/01-config.js` (Firebase),
+  `js/02-data.js` (dữ liệu mẫu departments/employees/tasks...).
+- **Sửa giao diện / màu sắc / kích thước**: `css/style.css`. Đầu file có ghi
+  chú giải thích cách đổi font chữ toàn app hoặc từng chỗ cụ thể (tìm các
+  comment `/* FONT: ... */` cạnh mỗi chỗ set `font-family` riêng).
+- **Sửa 1 trang cụ thể**: vào đúng file `js/1x-page-....js` tương ứng
+  (trang Tổng quan, trang Bộ phận, trang Đăng nhập...).
+- **Sửa 1 hành động cụ thể** (thêm/xoá/sửa task, nhân viên, máy, đơn nghỉ...):
+  vào đúng file `js/0x-actions-....js` hoặc `js/1x-actions-....js` tương ứng.
 
-   ```text
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /tcc/data {
-         allow read, write: if true;
-       }
-     }
-   }
-   ```
+## Chạy thử
 
-4. Deploy `index.html` **và** `firebase-config.js` lên cùng một website. Mở URL
-   đó ở hai trình duyệt; sửa ở một bên sẽ tự xuất hiện ở bên còn lại.
-
-> Quy tắc trên chỉ phù hợp cho trang nội bộ có URL được kiểm soát. Nếu website
-> công khai, hãy thêm Firebase Authentication và đổi rules để chỉ tài khoản đã
-> đăng nhập được đọc/ghi.
+Chỉ cần mở `index.html` bằng trình duyệt (double-click hoặc kéo thả vào
+trình duyệt) — không cần cài đặt gì thêm. Khi chưa cấu hình Firebase
+(`js/01-config.js`), app tự chạy "chế độ xem thử" với dữ liệu mẫu.
