@@ -329,14 +329,14 @@
    thật, mất dữ liệu khi tải lại trang) để bạn preview UI trước.
    ===================================================================== */
 const FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  authDomain: "manager-task-working.firebaseapp.com",
+  projectId: "manager-task-working",
+  storageBucket: "manager-task-working.firebasestorage.app",
+  messagingSenderId: "916020227715",
+  appId: "1:916020227715:web:65bdb8975e7b75386f75b6",
+  measurementId: "G-NBCQETRQ5G",
 };
-const IS_CONFIGURED = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+const IS_CONFIGURED = FIREBASE_CONFIG.apiKey !== "AIzaSyCOA2UXgDxuPhUsKouPLoAYI2ksg9EJK30";
 let db = null;
 if (IS_CONFIGURED) {
   firebase.initializeApp(FIREBASE_CONFIG);
