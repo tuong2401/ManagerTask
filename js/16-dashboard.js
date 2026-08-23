@@ -103,11 +103,11 @@ function renderDashboardBlock(tasksForDash, empList) {
         ${empBars}
       </div>
       <div class="dash-card">
-        <div class="dash-card-head">${ic("alert")} Cần chú ý (quá hạn)</div>
+        <div class="dash-card-head">${ic("alert")} Công việc trễ deadline</div>
         <div class="alert-list">${overdueHtml}</div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-head">${ic("check")} Hoàn thành gần đây</div>
+        <div class="dash-card-head">${ic("check")} Công việc đã thành gần đây</div>
         <div class="recent-list">${recentHtml}</div>
       </div>
     </div>

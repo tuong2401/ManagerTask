@@ -53,22 +53,13 @@ function renderOverviewPage() {
   return `
     <div class="header">
       <div>
-        <div class="title-row"><span class="led"></span><span class="title">TASK WORKING TAZMO VIỆT NAM</span></div>
-        <div class="subtitle">Tổng quan công việc của tất cả bộ phận.</div>
+        <div class="title-row"><span class="title">TAZMO VIỆT NAM</span></div>
       </div>
       <div class="user-chip">${ic("users")}<span class="who">Xin chào, <b>${escapeHtml(currentUser.name)}</b></span><button class="logout-btn" onclick="logout()">${ic("logout")} Đăng xuất</button></div>
     </div>
-    <div class="sync-bar" id="sync-bar"></div>
-
     <div class="toolbar">
-      <div class="toolbar-left"><span class="section-title" style="margin:0">${ic("grid")} Dashboard các bộ phận — nhấn vào một dashboard để mở trang quản lý riêng</span></div>
+      <div class="toolbar-left"><span class="section-title" style="margin:0">${ic("grid")} Dashboard tổng quan các công việc của từng bộ phận trong công ty</span></div>
       <div class="toolbar-actions"><button class="export-btn" onclick="exportExcel()">${ic("download")} Xuất Excel</button></div>
-    </div>
-    <div class="dash-summary">
-      <div class="dash-summary-item"><div class="dash-summary-label">Tổng công việc</div><div class="dash-summary-value mono">${stats.total}</div></div>
-      <div class="dash-summary-item"><div class="dash-summary-label">Đang thực hiện</div><div class="dash-summary-value mono">${stats.doing}</div></div>
-      <div class="dash-summary-item"><div class="dash-summary-label">Hoàn thành</div><div class="dash-summary-value mono">${stats.done}</div></div>
-      <div class="dash-summary-item"><div class="dash-summary-label">Quá hạn</div><div class="dash-summary-value mono ${stats.overdue > 0 ? "warn" : ""}">${stats.overdue}</div></div>
     </div>
     <div class="dept-grid">
       ${deptCards}
