@@ -44,7 +44,7 @@ function renderDepartment() {
         <button class="view-tab ${deptTab === "dashboard" ? "active" : ""}" onclick="setDeptTab('dashboard')">${ic("grid")} Dashboard</button>
         <button class="view-tab ${deptTab === "employees" ? "active" : ""}" onclick="setDeptTab('employees')">${ic("users")} Nhân viên</button>
         <button class="view-tab ${deptTab === "tasks" ? "active" : ""}" onclick="setDeptTab('tasks')">${ic("clipboard")} Task công việc</button>
-        <button class="view-tab ${deptTab === "machines" ? "active" : ""}" onclick="setDeptTab('machines')">${ic("wrench")} Máy đang chạy</button>
+        <button class="view-tab ${deptTab === "machines" ? "active" : ""}" onclick="setDeptTab('machines')">${ic("wrench")} List máy đang work</button>
       </div>
       <div class="toolbar-actions"><button class="export-btn" onclick="exportExcel()">${ic("download")} Xuất Excel</button></div>
     </div>
