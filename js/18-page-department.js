@@ -30,7 +30,7 @@ function renderDepartment() {
         <div class="subtitle">Trang quản lý riêng của bộ phận ${escapeHtml(dept.name)}.</div>
       </div>
       <div class="stats">
-        <div class="stat"><div class="stat-label">Tổng công việc nhóm</div><div class="stat-value mono">${stats.total}</div></div>
+        <div class="stat"><div class="stat-label">Tổng công việc của nhóm</div><div class="stat-value mono">${stats.total}</div></div>
         <div class="stat"><div class="stat-label">Đang thực hiện</div><div class="stat-value mono">${stats.doing}</div></div>
         <div class="stat"><div class="stat-label">Hoàn thành</div><div class="stat-value mono">${stats.done}</div></div>
         <div class="stat"><div class="stat-label">Quá hạn</div><div class="stat-value mono ${stats.overdue > 0 ? "warn" : ""}">${stats.overdue}</div></div>
