@@ -6,7 +6,10 @@
 /* ===================== DEPARTMENT PAGE ===================== */
 function renderDepartment() {
   const dept = departmentById(activeDeptId);
-  if (!dept) { backToOverview(); return ""; }
+  if (!dept) {
+    backToOverview();
+    return "";
+  }
   const dTasks = deptTasks(dept.id);
   const stats = {
     total: dTasks.length,
@@ -15,7 +18,8 @@ function renderDepartment() {
     overdue: dTasks.filter((t) => isOverdue(t)).length,
   };
   let body = "";
-  if (deptTab === "dashboard") body = renderDashboardBlock(dTasks, deptEmployees(dept.id));
+  if (deptTab === "dashboard")
+    body = renderDashboardBlock(dTasks, deptEmployees(dept.id));
   else if (deptTab === "employees") body = renderDeptEmployeesTab(dept);
   else if (deptTab === "tasks") body = renderDeptTasksTab(dept);
   else body = renderDeptMachinesTab(dept);
@@ -55,9 +59,14 @@ function renderDepartment() {
 /* ---- Tab: Nhân viên (nhân viên / đơn nghỉ / lịch đi làm) ---- */
 function renderDeptEmployeesTab(dept) {
   const emps = deptEmployees(dept.id);
-  const leaves = deptLeaves(dept.id).slice().sort((a, b) => (b.fromDate || "").localeCompare(a.fromDate || ""));
+  const leaves = deptLeaves(dept.id)
+    .slice()
+    .sort((a, b) => (b.fromDate || "").localeCompare(a.fromDate || ""));
 
-  const empRows = emps.length ? emps.map((e) => `
+  const empRows = emps.length
+    ? emps
+        .map(
+          (e) => `
     <div class="emp-row">
       <span class="dot" style="background:var(--${e.color})"></span>
       <div class="emp-info">
@@ -65,44 +74,84 @@ function renderDeptEmployeesTab(dept) {
         <div class="emp-role">${escapeHtml(e.role)}</div>
       </div>
       <span class="emp-count mono">${taskCountFor(e.id)}</span>
-      <button class="icon-btn danger" style="margin-left:4px" onclick="deleteEmployee('${e.id}')" aria-label="Xoá nhân viên">${ic("trash")}</button>
+      ${hasPermission("employee:delete") ? `<button class="icon-btn danger" style="margin-left:4px" onclick="deleteEmployee('${e.id}')" aria-label="Xoá nhân viên">${ic("trash")}</button>` : ""}
     </div>
-  `).join("") : `<div class="empty-table" style="padding:16px">Chưa có nhân viên nào trong bộ phận này.</div>`;
+  `,
+        )
+        .join("")
+    : `<div class="empty-table" style="padding:16px">Chưa có nhân viên nào trong bộ phận này.</div>`;
 
-  const leaveEmpOptions = emps.map((e) => `<option value="${e.id}">${escapeHtml(e.name)} (${escapeHtml(e.code)})</option>`).join("");
-  const leaveList = leaves.length ? leaves.map((l) => {
-    const emp = employeeById(l.employeeId);
-    const stColor = l.status === "approved" ? "green" : l.status === "rejected" ? "red" : "amber";
-    return `
+  const leaveEmpOptions = emps
+    .map(
+      (e) =>
+        `<option value="${e.id}">${escapeHtml(e.name)} (${escapeHtml(e.code)})</option>`,
+    )
+    .join("");
+  let visibleLeaves = leaves;
+  if (!hasPermission("leave:approve")) {
+    visibleLeaves = leaves.filter((l) => l.employeeId == currentUser.id);
+  }
+  const leaveList = visibleLeaves.length
+    ? visibleLeaves
+        .map((l) => {
+          const emp = employeeById(l.employeeId);
+          const stColor =
+            l.status === "approved"
+              ? "green"
+              : l.status === "rejected"
+                ? "red"
+                : "amber";
+          return `
       <div class="leave-item">
         <div class="item-info">
           <div class="item-title">${emp ? escapeHtml(emp.name) : "Đã xoá"} <span class="item-sub">(${fmtDate(l.fromDate)} → ${fmtDate(l.toDate)})</span></div>
           ${l.reason ? `<div class="item-sub">${escapeHtml(l.reason)}</div>` : ""}
         </div>
         <div class="leave-actions">
-          <select class="status-select" style="color:var(--${stColor});border-color:var(--${stColor})" onchange="setLeaveStatus('${l.id}',this.value)">
-            <option value="pending" ${l.status === "pending" ? "selected" : ""}>Chờ duyệt</option>
-            <option value="approved" ${l.status === "approved" ? "selected" : ""}>Đã duyệt</option>
-            <option value="rejected" ${l.status === "rejected" ? "selected" : ""}>Từ chối</option>
-          </select>
-          <button class="icon-btn danger" onclick="deleteLeave('${l.id}')">${ic("trash")}</button>
+          ${hasPermission("leave:approve")
+              ? `
+                    <select class="status-select" style="color:var(--${stColor});border-color:var(--${stColor})" onchange="setLeaveStatus('${l.id}',this.value)">
+                      <option value="pending" ${l.status === "pending" ? "selected" : ""}>Chờ duyệt</option>
+                      <option value="approved" ${l.status === "approved" ? "selected" : ""}>Đã duyệt</option>
+                      <option value="rejected" ${l.status === "rejected" ? "selected" : ""}>Từ chối</option>
+                    </select>
+                `
+              : `
+                  <span class="badge mono" style="color:var(--${stColor});border-color:var(--${stColor})">${l.status === "pending" ? "Chờ duyệt" : l.status === "approved" ? "Đã duyệt" : "Từ chối"}</span>
+                `
+          }
+          ${(hasPermission("leave:approve") ||
+              l.employeeId === currentUser.id && l.status === "pending")
+              ? `<button class="icon-btn danger" onclick="deleteLeave('${l.id}')">${ic("trash")}</button>`
+              : ""
+          }
         </div>
-      </div>
-    `;
-  }).join("") : `<div class="empty-dash">Chưa có đơn nghỉ nào.</div>`;
+      </div>`;
+    })
+    .join("")
+    : `<div class="empty-dash">Chưa có đơn nghỉ nào.</div>`;
 
-  const calEmpOptions = emps.map((e) => `<option value="${e.id}" ${calEmpId === e.id ? "selected" : ""}>${escapeHtml(e.name)}</option>`).join("");
-  const monthLabel = calMonth.toLocaleDateString("vi-VN", { month: "long", year: "numeric" });
+  const calEmpOptions = emps
+    .map(
+      (e) =>
+        `<option value="${e.id}" ${calEmpId === e.id ? "selected" : ""}>${escapeHtml(e.name)}</option>`,
+    )
+    .join("");
+  const monthLabel = calMonth.toLocaleDateString("vi-VN", {
+    month: "long",
+    year: "numeric",
+  });
 
   return `
     <div class="dash-grid">
       <div class="dash-card">
         <div class="dash-card-head">${ic("users")} Quản lý nhân viên</div>
         ${empRows}
-        ${!showEmpForm
-          ? `<button class="small-btn" onclick="showEmpForm=true;render()">${ic("plus")} Thêm nhân viên</button>`
-          : `<div class="form">
-               <input id="f-ecode" placeholder="Mã số nhân viên (VD: NV005)" />
+          ${hasPermission('employee:add') ? (
+          !showEmpForm
+            ? `<button class="small-btn" onclick="showEmpForm=true;render()">${ic("plus")} Thêm nhân viên</button>`
+            : `<div class="form">
+                 <input id="f-ecode" placeholder="Mã số nhân viên (VD: NV005)" />
                <input id="f-ename" placeholder="Họ tên" />
                <input id="f-erole" placeholder="Chức vụ" />
                <input id="f-epass" placeholder="Mật khẩu đăng nhập (để trống = dùng mã NV)" />
@@ -111,15 +160,22 @@ function renderDeptEmployeesTab(dept) {
                  <button class="btn-primary" onclick="addEmployee()">Thêm</button>
                  <button onclick="showEmpForm=false;render()">Huỷ</button>
                </div>
-             </div>`}
+             </div>`
+        ) : ''
+        }
       </div>
 
       <div class="dash-card">
         <div class="dash-card-head">${ic("calendar")} Tạo đơn nghỉ</div>
-        ${!showLeaveForm
-          ? `<button class="small-btn" onclick="showLeaveForm=true;render()">${ic("plus")} Tạo đơn nghỉ mới</button>`
-          : `<div class="form" style="margin-top:0;border-top:none;padding-top:0">
-               <select id="f-lemp"><option value="">Chọn nhân viên...</option>${leaveEmpOptions}</select>
+        ${
+          !showLeaveForm
+            ? `<button class="small-btn" onclick="showLeaveForm=true;render()">${ic("plus")} Tạo đơn nghỉ mới</button>`
+            : `<div class="form" style="margin-top:0;border-top:none;padding-top:0">
+               ${hasPermission('leave:approve') 
+                 ? `<select id="f-lemp"><option value="">Chọn nhân viên...</option>${leaveEmpOptions}</select>` 
+                 : `<input type="hidden" id="f-lemp" value="${currentUser.id}" />
+                    <div style="margin-bottom: 8px; font-weight: 500;">Người xin nghỉ: <span style="color:var(--blue)">${escapeHtml(currentUser.name)}</span></div>`
+               }
                <div style="display:flex;gap:8px">
                  <input id="f-lfrom" type="date" style="flex:1" />
                  <input id="f-lto" type="date" style="flex:1" />
@@ -130,13 +186,16 @@ function renderDeptEmployeesTab(dept) {
                  <button class="btn-primary" onclick="addLeave()">Tạo đơn</button>
                  <button onclick="showLeaveForm=false;render()">Huỷ</button>
                </div>
-             </div>`}
+             </div>`
+        }
         <div class="leave-list" style="margin-top:12px">${leaveList}</div>
       </div>
 
       <div class="dash-card" style="grid-column:1 / -1">
         <div class="dash-card-head">${ic("calendar")} Lịch đi làm của nhân viên</div>
-        ${emps.length ? `
+        ${
+          emps.length
+            ? `
           <div class="cal-head">
             <select onchange="setCalEmp(this.value)" style="min-width:180px">${calEmpOptions}</select>
             <div style="display:flex;align-items:center;gap:8px">
@@ -151,7 +210,9 @@ function renderDeptEmployeesTab(dept) {
             <span><span class="sw" style="background:var(--amber-soft);border:1px solid var(--amber)"></span>Nghỉ phép</span>
             <span><span class="sw" style="background:var(--panel-2)"></span>Cuối tuần (chữ mờ)</span>
           </div>
-        ` : `<div class="empty-dash">Chưa có nhân viên để hiển thị lịch.</div>`}
+        `
+            : `<div class="empty-dash">Chưa có nhân viên để hiển thị lịch.</div>`
+        }
       </div>
     </div>
   `;
@@ -161,22 +222,30 @@ function renderDeptEmployeesTab(dept) {
 function renderDeptTasksTab(dept) {
   const emps = deptEmployees(dept.id);
   const allDeptTasks = deptTasks(dept.id);
-  const visibleTasks = filterId ? allDeptTasks.filter((t) => t.assigneeId === filterId) : allDeptTasks;
+  const visibleTasks = filterId
+    ? allDeptTasks.filter((t) => t.assigneeId === filterId)
+    : allDeptTasks;
   const filterEmp = filterId ? employeeById(filterId) : null;
-  const machineOptions = deptMachines(dept.id).map((m) => `<option value="${m.id}">${escapeHtml(m.name)}</option>`).join("");
+  const machineOptions = deptMachines(dept.id)
+    .map((m) => `<option value="${m.id}">${escapeHtml(m.name)}</option>`)
+    .join("");
 
   return `
     <div class="layout">
       <div class="panel">
         <div class="panel-head">${ic("users")} Lọc theo nhân viên</div>
         ${emps.length === 0 ? `<div class="empty-table">Chưa có nhân sự nào.</div>` : ""}
-        ${emps.map((emp) => `
+        ${emps
+          .map(
+            (emp) => `
           <div class="emp-row ${filterId === emp.id ? "active" : ""}" onclick="toggleFilter('${emp.id}')">
             <span class="dot" style="background:var(--${emp.color})"></span>
             <div class="emp-info"><div class="emp-name">${escapeHtml(emp.name)}</div><div class="emp-role">${escapeHtml(emp.role)}</div></div>
             <span class="emp-count mono">${taskCountFor(emp.id)}</span>
           </div>
-        `).join("")}
+        `,
+          )
+          .join("")}
       </div>
 
       <div>
@@ -189,7 +258,9 @@ function renderDeptTasksTab(dept) {
           </div>
         </div>
 
-        ${showTaskForm ? `
+        ${
+          showTaskForm
+            ? `
           <div class="task-form">
             <div class="task-form-row">
               <div><label class="field-label">Tên công việc</label><input id="f-title" placeholder="VD: Hiệu chỉnh cảm biến trạm AL" style="width:100%" /></div>
@@ -222,26 +293,31 @@ function renderDeptTasksTab(dept) {
             </div>
             <div id="f-error" class="form-error"></div>
           </div>
-        ` : ""}
+        `
+            : ""
+        }
 
         <div class="table-wrap">
           <table class="tasks">
             <colgroup>${colWidths.map((w) => `<col style="width:${w}px">`).join("")}</colgroup>
             <thead>
               <tr>
-                ${COL_LABELS.map((label, i) => `
+                ${COL_LABELS.map(
+                  (label, i) => `
                   <th>${escapeHtml(label)}${i < COL_LABELS.length - 1 ? `<span class="col-resizer" onmousedown="startColResize(event,${i})"></span>` : ""}</th>
-                `).join("")}
+                `,
+                ).join("")}
               </tr>
             </thead>
             <tbody>
               ${visibleTasks.length === 0 ? `<tr><td colspan="9" class="empty-table">Không có công việc nào.</td></tr>` : ""}
-              ${visibleTasks.map((task) => {
-                const emp = employeeById(task.assigneeId);
-                const overdue = isOverdue(task);
-                const prio = priorityInfo(task.priority);
-                const st = statusInfo(task.status);
-                return `
+              ${visibleTasks
+                .map((task) => {
+                  const emp = employeeById(task.assigneeId);
+                  const overdue = isOverdue(task);
+                  const prio = priorityInfo(task.priority);
+                  const st = statusInfo(task.status);
+                  return `
                   <tr data-task-id="${task.id}" style="${rowHeights[task.id] ? "height:" + rowHeights[task.id] + "px" : ""}">
                     <td class="col-title"><button class="task-title-btn" onclick="openTaskModal('${task.id}')">${escapeHtml(task.title)}</button></td>
                     <td class="col-assignee"><span class="assignee-cell">${emp ? `<span class="dot" style="background:var(--${emp.color})"></span>${escapeHtml(emp.name)}` : "Chưa gán"}</span></td>
@@ -261,7 +337,8 @@ function renderDeptTasksTab(dept) {
                     </div></td>
                   </tr>
                 `;
-              }).join("")}
+                })
+                .join("")}
             </tbody>
           </table>
         </div>
@@ -275,7 +352,17 @@ function machineTaskGroup(title, list) {
   return `
     <div class="machine-group">
       <div class="machine-group-head"><span>${title}</span><span class="mono">${list.length}</span></div>
-      ${list.length ? list.slice(0, 6).map((t) => `<div class="machine-task-item" onclick="openTaskModal('${t.id}')">${escapeHtml(t.title)}</div>`).join("") : `<div class="machine-empty">— trống —</div>`}
+      ${
+        list.length
+          ? list
+              .slice(0, 6)
+              .map(
+                (t) =>
+                  `<div class="machine-task-item" onclick="openTaskModal('${t.id}')">${escapeHtml(t.title)}</div>`,
+              )
+              .join("")
+          : `<div class="machine-empty">— trống —</div>`
+      }
     </div>
   `;
 }
@@ -285,7 +372,9 @@ function renderMachineCard(m, dept) {
   const pending = mTasks.filter((t) => t.status === "pending");
   const done = mTasks.filter((t) => t.status === "done");
   const todo = mTasks.filter((t) => t.status === "todo");
-  const highPrio = mTasks.filter((t) => t.priority === "high" && t.status !== "done");
+  const highPrio = mTasks.filter(
+    (t) => t.priority === "high" && t.status !== "done",
+  );
   return `
     <div class="machine-card ${m.completed ? "completed" : ""}">
       <div class="machine-head">
@@ -319,7 +408,9 @@ function renderDeptMachinesTab(dept) {
       <div class="toolbar-left"><span style="font-size:12.5px;color:var(--text-faint)">${active.length} máy đang chạy · ${completed.length} máy đã hoàn thành</span></div>
       <div class="toolbar-actions"><button class="add-task-btn" onclick="showMachineForm=!showMachineForm;render()">${ic("plus")} Thêm máy mới</button></div>
     </div>
-    ${showMachineForm ? `
+    ${
+      showMachineForm
+        ? `
       <div class="task-form">
         <div class="task-form-row">
           <div><label class="field-label">Tên máy</label><input id="f-mname" placeholder="VD: Máy C - X198" style="width:100%" /></div>
@@ -333,7 +424,9 @@ function renderDeptMachinesTab(dept) {
         </div>
         <div id="f-machine-error" class="form-error"></div>
       </div>
-    ` : ""}
+    `
+        : ""
+    }
 
     ${active.length ? `<div class="machine-grid">${active.map((m) => renderMachineCard(m, dept)).join("")}</div>` : `<div class="empty-table">Chưa có máy nào đang chạy trong bộ phận này.</div>`}
 

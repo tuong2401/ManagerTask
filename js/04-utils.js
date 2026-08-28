@@ -35,3 +35,29 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 function escapeAttr(s) { return escapeHtml(s); }
+
+/* ===================== RBAC PERMISSIONS ===================== */
+const SYSTEM_ROLES = {
+  EMPLOYEE: 'employee',
+  MANAGER: 'manager'
+}
+
+const PERMISSIONS = {
+  [SYSTEM_ROLES.EMPLOYEE]: [
+    'leave:create'
+  ],
+  [SYSTEM_ROLES.MANAGER]: [
+    'leave:create',
+    'leave:approve',
+    'employee:add',
+    'employee:delete'
+  ]
+};
+
+
+// Hàm dùng chung để kiểm tra quyền
+function hasPermission(action){
+  if (!currentUser || !currentUser.accessLevel) return false;
+  const userPermissions = PERMISSIONS[currentUser.accessLevel] || [];
+  return userPermissions.includes(action);
+}
