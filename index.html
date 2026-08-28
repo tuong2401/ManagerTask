@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Task Working Tazmo Việt Nam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="app"><div style="padding:40px;text-align:center;color:#93a1ab;font-family:'IBM Plex Mono',monospace;font-size:12px;">Đang tải dữ liệu...</div></div>
+
+<!-- Thư viện ngoài -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<!-- =====================================================================
+     MÃ NGUỒN APP — nạp theo ĐÚNG THỨ TỰ bên dưới (không phải ES module,
+     tất cả file dùng chung 1 scope toàn cục nên thứ tự nạp quan trọng:
+     file khai báo state/data phải nạp trước file dùng đến chúng, và
+     21-app.js phải nạp SAU CÙNG vì nó gọi initStorage() để khởi động app).
+     Xem js/README.md để biết chi tiết từng file.
+     ===================================================================== -->
+<script src="js/01-config.js"></script>
+<script src="js/02-data.js"></script>
+<script src="js/03-state.js"></script>
+<script src="js/04-utils.js"></script>
+<script src="js/05-storage.js"></script>
+<script src="js/06-auth.js"></script>
+<script src="js/07-navigation.js"></script>
+<script src="js/08-actions-department.js"></script>
+<script src="js/09-actions-employee.js"></script>
+<script src="js/10-actions-leave.js"></script>
+<script src="js/11-calendar.js"></script>
+<script src="js/12-actions-task.js"></script>
+<script src="js/13-actions-machine.js"></script>
+<script src="js/14-data-tools.js"></script>
+<script src="js/15-donut.js"></script>
+<script src="js/16-dashboard.js"></script>
+<script src="js/17-page-overview.js"></script>
+<script src="js/18-page-department.js"></script>
+<script src="js/19-modal-task.js"></script>
+<script src="js/20-page-login.js"></script>
+<script src="js/21-app.js"></script>
+</body>
+</html>
