@@ -5,6 +5,10 @@
 
 /* ===================== EMPLOYEE ACTIONS ===================== */
 async function addEmployee() {
+  if (!hasPermission('employee:add')){
+    alert('Bạn không có quyền thêm nhân viên');
+    return;
+  }
   const code = document.getElementById("f-ecode").value.trim();
   const name = document.getElementById("f-ename").value.trim();
   const role = document.getElementById("f-erole").value.trim();
@@ -22,6 +26,10 @@ async function addEmployee() {
   await saveData();
 }
 async function deleteEmployee(id) {
+  if (!hasPermission('employee:delete')){
+    alert('Bạn không có quyền xoá nhân viên');
+    return;
+  }
   if (!confirm("Xoá nhân viên này? Các công việc đã giao sẽ chuyển về trạng thái Chưa gán.")) return;
   employees = employees.filter((e) => e.id !== id);
   if (calEmpId === id) { const de = deptEmployees(activeDeptId); calEmpId = de.length ? de[0].id : null; }
