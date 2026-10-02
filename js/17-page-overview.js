@@ -29,7 +29,7 @@ function renderOverviewPage() {
         { value: done, color: "green" },
         { value: closed, color: "purple" },
       ],
-      { size: 82, thickness: 12, centerLabel: pct + "%", centerSub: "" }
+      { size: 82, thickness: 12, centerLabel: pct + "%", centerSub: "", overdueCount: overdue, total: dTasks.length }
     );
     return `
       <button class="dept-card" onclick="openDepartment('${d.id}')">
@@ -73,7 +73,12 @@ function renderOverviewPage() {
           ? `<button class="dept-card" style="align-items:center;justify-content:center;color:var(--text-faint)" onclick="showDeptForm=true;render()">${ic("plus", "ic-lg")}<span style="margin-top:6px;font-size:12.5px">Thêm bộ phận</span></button>`
           : `<div class="dept-card" style="cursor:default">
                <div class="field-label">Tên bộ phận mới</div>
-               <input id="f-dname" placeholder="VD: Kỹ thuật QC" />
+               <input id="f-dname" placeholder="VD: Kỹ thuật QC" style="margin-bottom:8px" />
+               <div class="field-label">Loại phòng ban</div>
+               <select id="f-dtype" style="width:100%;margin-bottom:8px">
+                 <option value="tech">Phòng Kỹ thuật / Sản xuất (dùng Thiết bị & Máy)</option>
+                 <option value="office">Phòng Văn phòng / Kế toán (dùng Hạng mục & Dự án)</option>
+               </select>
                <div id="f-dept-error" class="form-error"></div>
                <div class="form-actions">
                  <button class="btn-primary" onclick="addDepartment()">Thêm</button>

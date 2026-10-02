@@ -32,6 +32,12 @@ function deptTasks(deptId) { return tasks.filter((t) => t.departmentId === deptI
 function deptMachines(deptId) { return machines.filter((m) => m.departmentId === deptId); }
 function deptLeaves(deptId) { return leaveRequests.filter((l) => l.departmentId === deptId); }
 function taskCountFor(empId) { return tasks.filter((t) => t.assigneeId === empId).length; }
+function isOfficeDept(dept) {
+  if (!dept) return false;
+  if (dept.hasMachine === false || dept.type === 'office') return true;
+  const name = (dept.name || "").toLowerCase();
+  return name.includes("kế toán") || name.includes("nhân sự") || name.includes("hành chính") || name.includes("accounting") || name.includes("hr");
+}
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
@@ -40,7 +46,9 @@ function escapeAttr(s) { return escapeHtml(s); }
 /* ===================== RBAC PERMISSIONS ===================== */
 const SYSTEM_ROLES = {
   EMPLOYEE: 'employee',
-  MANAGER: 'manager'
+  DEPT_MANAGER: 'dept_manager',
+  ADMIN: 'admin',
+  DIRECTOR: 'director'
 };
 
 const PERMISSIONS = {
@@ -48,7 +56,39 @@ const PERMISSIONS = {
     'leave:create',
     'task:status_self'
   ],
-  [SYSTEM_ROLES.MANAGER]: [
+  [SYSTEM_ROLES.DEPT_MANAGER]: [
+    'task:create',
+    'task:edit',
+    'task:delete',
+    'task:status_self',
+    'task:status_close',
+    'leave:create',
+    'leave:approve',
+    'employee:add',
+    'employee:delete',
+    'machine:add',
+    'machine:toggle',
+    'data:export'
+  ],
+
+  // Ban giám đốc / Admin: Toàn quyền mọi phòng ban + tạo phòng ban + reset hệ thống
+  [SYSTEM_ROLES.ADMIN]: [
+    'task:create',
+    'task:edit',
+    'task:delete',
+    'task:status_self',
+    'task:status_close',
+    'leave:create',
+    'leave:approve',
+    'employee:add',
+    'employee:delete',
+    'department:add',
+    'machine:add',
+    'machine:toggle',
+    'system:reset',
+    'data:export'
+  ],
+  [SYSTEM_ROLES.DIRECTOR]: [
     'task:create',
     'task:edit',
     'task:delete',
@@ -66,21 +106,62 @@ const PERMISSIONS = {
   ]
 };
 
-// Hàm dùng chung để kiểm tra quyền
-function hasPermission(action) {
+// Kiểm tra quyền hạn theo action và phòng ban (deptId)
+function hasPermission(action, targetDeptId) {
   if (!currentUser || !currentUser.accessLevel) return false;
-  const userPermissions = PERMISSIONS[currentUser.accessLevel] || [];
-  return userPermissions.includes(action);
+  const userRole = currentUser.accessLevel;
+  const userPermissions = PERMISSIONS[userRole] || [];
+  if (!userPermissions.includes(action)) return false;
+
+  // Cấp cao (admin/director) có quyền trên toàn bộ các phòng ban
+  if (userRole === SYSTEM_ROLES.ADMIN || userRole === SYSTEM_ROLES.DIRECTOR) {
+    return true;
+  }
+
+  // Quản lý bộ phận (dept_manager / manager):
+  // Các thao tác phạm vi bộ phận phải đúng phòng ban mình quản lý
+  const deptScopedActions = [
+    'task:create',
+    'task:edit',
+    'task:delete',
+    'task:status_close',
+    'leave:approve',
+    'employee:add',
+    'employee:delete',
+    'machine:add',
+    'machine:toggle'
+  ];
+
+  if (deptScopedActions.includes(action)) {
+    const scopeDeptId = targetDeptId !== undefined ? targetDeptId : (typeof activeDeptId !== "undefined" ? activeDeptId : null);
+    if (scopeDeptId && currentUser.departmentId && scopeDeptId !== currentUser.departmentId) {
+      return false; // Chuyển sang View-only khi ở phòng ban khác
+    }
+  }
+
+  return true;
+}
+
+// Kiểm tra xem người dùng hiện tại có ở chế độ chỉ xem (View-only) trong phòng ban hay không
+function isDeptReadOnly(deptId) {
+  if (!currentUser) return true;
+  const userRole = currentUser.accessLevel;
+  if (userRole === SYSTEM_ROLES.ADMIN || userRole === SYSTEM_ROLES.DIRECTOR) return false;
+  const checkDeptId = deptId || activeDeptId;
+  return currentUser.departmentId !== checkDeptId;
 }
 
 function canEditTask(task) {
   if (!currentUser || !task) return false;
-  if (hasPermission('task:edit')) return true;
+  if (hasPermission('task:edit', task.departmentId)) return true;
+  // Nhân viên phụ trách (PIC) không được sửa nếu task đã quá hạn
+  if (isOverdue(task)) return false;
   return task.assigneeId === currentUser.id;
 }
 
 function canDeleteTask(task) {
-  return hasPermission('task:delete');
+  if (!task) return false;
+  return hasPermission('task:delete', task.departmentId);
 }
 
 function canChangeTaskStatus(task, newStatus) {
@@ -90,6 +171,10 @@ function canChangeTaskStatus(task, newStatus) {
     return hasPermission('task:status_close');
   }
   // Các trạng thái tiến độ thông thường (todo, doing, pending, done):
+  // Nếu task quá hạn, nhân viên không được tự ý đổi trạng thái (chỉ Manager có quyền can thiệp)
+  if (isOverdue(task) && !hasPermission('task:edit')) {
+    return false;
+  }
   // Chỉ người phụ trách (PIC) mới có quyền cập nhật
   if (hasPermission('task:status_self') && task.assigneeId === currentUser.id) {
     return true;

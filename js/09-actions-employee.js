@@ -28,8 +28,14 @@ async function addEmployee() {
   await saveData();
 }
 async function deleteEmployee(id) {
-  if (!hasPermission('employee:delete')) {
+  const targetEmp = employees.find((e) => e.id === id);
+  const targetDept = targetEmp ? targetEmp.departmentId : activeDeptId;
+  if (!hasPermission('employee:delete', targetDept)) {
     alert(t("err_perm_del_emp"));
+    return;
+  }
+  if (currentUser && currentUser.id === id) {
+    alert(t("err_cannot_delete_self"));
     return;
   }
   if (!confirm("Xoá nhân viên này? Các công việc đã giao sẽ chuyển về trạng thái Chưa gán.")) return;

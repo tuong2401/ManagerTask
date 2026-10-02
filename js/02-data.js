@@ -26,17 +26,17 @@ const PRIORITY = {
 
 
 const seedDepartments = [
-  { id: "d1", name: "Thiết Kế Điện", color: "blue" },
-  { id: "d2", name: "Thiết Kế Cơ Khí", color: "teal" },
-  { id: "d3", name: "Kế Toán", color: "amber" },
+  { id: "d1", name: "Thiết Kế Điện", color: "blue", type: "tech", hasMachine: true },
+  { id: "d2", name: "Thiết Kế Cơ Khí", color: "teal", type: "tech", hasMachine: true },
+  { id: "d3", name: "Kế Toán", color: "amber", type: "office", hasMachine: false },
 ];
 const seedEmployees = [
   { id: "e1", code: "NV001", name: "Minh Tuấn", role: "Kỹ sư điều khiển", password: "123456", departmentId: "d1", color: "blue", accessLevel: 'employee' },
   { id: "e2", code: "NV002", name: "Quốc Bảo", role: "Kỹ thuật viên bảo trì", password: "123456", departmentId: "d1", color: "teal", accessLevel: 'employee' },
   { id: "e3", code: "NV003", name: "Thu Hà", role: "Kỹ sư cơ khí", password: "123456", departmentId: "d2", color: "green", accessLevel: 'employee' },
   { id: "e4", code: "NV004", name: "Lan Anh", role: "Kế toán viên", password: "123456", departmentId: "d3", color: "amber", accessLevel: 'employee' },
-  { id: "e5", code: "1111", name: "Hoài Nam", role: "Quản lý", password: "111111", departmentId: "d1", color: "amber", accessLevel: 'manager' },
-
+  { id: "e5", code: "1111", name: "Hoài Nam", role: "Trưởng phòng Điện", password: "111111", departmentId: "d1", color: "amber", accessLevel: 'dept_manager' },
+  { id: "e6", code: "9999", name: "Ban Giám Đốc", role: "Giám đốc", password: "999999", departmentId: "", color: "purple", accessLevel: 'director' },
 ];
 const seedMachines = [
   { id: "m1", departmentId: "d1", name: "Máy A - X197", deliveryDate: "2026-09-15", spec: "TAZMO X197, EFEM 4 slot, EtherCAT servo MR-J5", completed: false },

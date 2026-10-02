@@ -20,11 +20,16 @@ function initStorage() {
     (snap) => {
       if (snap.exists) {
         const data = snap.data();
-        departments = data.departments || seedDepartments.slice();
+        departments = (data.departments || seedDepartments.slice()).map((d) => ({
+          ...d,
+          type: d.type || ((d.name || "").toLowerCase().includes("kế toán") ? "office" : "tech"),
+          hasMachine: d.hasMachine !== undefined ? d.hasMachine : !((d.name || "").toLowerCase().includes("kế toán"))
+        }));
         employees = (data.employees || []).map((e) => ({
           ...e,
-          accessLevel: e.accessLevel || (e.role && e.role.toLowerCase().includes("quản lý") ? "manager" : "employee")
+          accessLevel: e.accessLevel || (e.role && e.role.toLowerCase().includes("quản lý") ? "dept_manager" : "employee")
         }));
+
         tasks = data.tasks || [];
         leaveRequests = data.leaveRequests || [];
         machines = data.machines || [];

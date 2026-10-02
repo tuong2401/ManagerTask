@@ -157,6 +157,8 @@
   .legend-item .dot { width: 9px; height: 9px; flex-shrink: 0; }
   .legend-item .legend-label { flex: 1; color: var(--text-dim); }
   .legend-item .legend-value { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .donut-overdue-group { transition: transform .2s ease, opacity .2s ease; cursor: pointer; }
+  .donut-overdue-group:hover circle:last-child { filter: drop-shadow(0 0 2px rgba(255, 28, 3, 0.6)); opacity: .9; }
 
   .emp-bar-row { margin-bottom: 13px; }
   .emp-bar-row:last-child { margin-bottom: 0; }

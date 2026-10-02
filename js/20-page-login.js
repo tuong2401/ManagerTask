@@ -27,7 +27,17 @@ function renderLoginPage() {
         </div>
         <button class="login-btn" onclick="doLogin()">${t('login_btn')}</button>
         ${loginError ? `<div class="login-error">${escapeHtml(loginError)}</div>` : ""}
-        <div class="login-hint">Tài khoản demo: NV001 / 123456 (Thiết Kế Điện), NV003 / 123456 (Thiết Kế Cơ Khí), NV004 / 123456 (Kế Toán).</div>
+        <!--
+        <div class="login-hint" style="margin-top:14px">
+          <div><b>Quản lý:</b> 1111 / 111111</div>
+          <div><b>Nhân viên:</b> NV001 / 123456, NV003 / 123456, NV004 / 123456</div>
+        </div>
+        <div style="text-align:center;margin-top:16px;border-top:1px dashed var(--border);padding-top:12px">
+          <button type="button" style="background:none;border:none;color:var(--text-faint);font-size:11.5px;cursor:pointer;text-decoration:underline" onclick="if(confirm('Khôi phục toàn bộ dữ liệu mẫu ban đầu (bao gồm tài khoản Quản lý)?')){departments=seedDepartments.slice();employees=seedEmployees.slice();tasks=seedTasks.slice();leaveRequests=seedLeaves.slice();machines=seedMachines.slice();saveData();render();alert('Đã khôi phục thành công!');}">
+            ⚡ Khôi phục lại dữ liệu mẫu ban đầu (Reset DB)
+          </button>
+        </div>
+        -->
       </div>
     </div>
   `;

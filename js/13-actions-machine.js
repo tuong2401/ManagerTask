@@ -13,7 +13,12 @@ async function addMachine() {
   const deliveryDate = document.getElementById("f-mdate").value;
   const spec = document.getElementById("f-mspec").value.trim();
   const errEl = document.getElementById("f-machine-error");
-  if (!name) { if (errEl) errEl.textContent = "Vui lòng nhập tên máy."; return; }
+  const dept = departmentById(activeDeptId);
+  const isOffice = isOfficeDept(dept);
+  if (!name) { 
+    if (errEl) errEl.textContent = isOffice ? "Vui lòng nhập tên dự án / hạng mục." : "Vui lòng nhập tên máy."; 
+    return; 
+  }
   machines.push({ id: uid("m"), departmentId: activeDeptId, name, deliveryDate, spec, completed: false });
   showMachineForm = false;
   render();

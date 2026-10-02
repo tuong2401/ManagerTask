@@ -16,7 +16,13 @@ async function addLeave() {
   const reason = document.getElementById("f-lreason").value.trim();
   const errEl = document.getElementById("f-leave-error");
   if (!employeeId || !fromDate || !toDate) { if (errEl) errEl.textContent = "Vui lòng chọn nhân viên và khoảng ngày nghỉ."; return; }
-  leaveRequests.push({ id: uid("l"), employeeId, departmentId: activeDeptId, fromDate, toDate, reason, status: "pending" });
+
+  // Nếu người xin nghỉ là Quản lý → cần Giám đốc/Admin duyệt
+  const applicant = employeeById(employeeId);
+  const isMgrApplicant = applicant && (applicant.accessLevel === 'dept_manager');
+  const initialStatus = isMgrApplicant ? "pending_director" : "pending";
+
+  leaveRequests.push({ id: uid("l"), employeeId, departmentId: activeDeptId, fromDate, toDate, reason, status: initialStatus });
   showLeaveForm = false;
   render();
   await saveData();
@@ -26,13 +32,29 @@ async function setLeaveStatus(id, status) {
     alert(t("err_perm_approve_leave"));
     return;
   }
-  
+
   const l = leaveRequests.find((x) => x.id === id);
   if (!l) return;
+
+  // Không được tự duyệt đơn của mình
+  if (l.employeeId === currentUser.id) {
+    alert(t("err_perm_self_approve"));
+    return;
+  }
+
+  // Đơn "Chờ GĐ duyệt" chỉ admin/director mới được xử lý
+  const isDirectorOnly = l.status === "pending_director" || status === "pending_director";
+  const isHighRole = currentUser.accessLevel === 'admin' || currentUser.accessLevel === 'director';
+  if (isDirectorOnly && !isHighRole) {
+    alert(t("err_perm_director_only"));
+    return;
+  }
+
   l.status = status;
   render();
   await saveData();
 }
+
 async function deleteLeave(id) {
   const l = leaveRequests.find((x) => x.id === id);
   if (!l) return;

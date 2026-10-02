@@ -40,7 +40,9 @@ async function setStatus(id, newStatus) {
   const t = tasks.find((x) => x.id === id);
   if (!t) return;
   if (!canChangeTaskStatus(t, newStatus)) {
-    if (newStatus === 'closed' || t.status === 'closed') {
+    if (isOverdue(t) && !hasPermission('task:edit')) {
+      alert(t("err_task_overdue_locked"));
+    } else if (newStatus === 'closed' || t.status === 'closed') {
       alert(t("err_perm_status_close"));
     } else {
       alert(t("err_perm_only_pic_status"));
@@ -79,14 +81,16 @@ async function updateField(id, field, value) {
   if (!t) return;
   if (field === 'status') {
     if (!canChangeTaskStatus(t, value)) {
-      if (value === 'closed' || t.status === 'closed') alert(t("err_perm_status_close"));
+      if (isOverdue(t) && !hasPermission('task:edit')) alert(t("err_task_overdue_locked"));
+      else if (value === 'closed' || t.status === 'closed') alert(t("err_perm_status_close"));
       else alert(t("err_perm_only_pic_status"));
       render();
       return;
     }
   } else {
     if (!canEditTask(t)) {
-      alert(t("err_perm_edit_task"));
+      if (isOverdue(t) && !hasPermission('task:edit')) alert(t("err_task_overdue_locked"));
+      else alert(t("err_perm_edit_task"));
       render();
       return;
     }

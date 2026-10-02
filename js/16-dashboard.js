@@ -22,7 +22,12 @@ function renderDashboardBlock(tasksForDash, empList) {
       { value: doneCount, color: "green" },
       { value: closedCount, color: "purple" },
     ],
-    { centerLabel: completionRate + "%", centerSub: t("donut_completed") }
+    {
+      centerLabel: completionRate + "%",
+      centerSub: t("donut_completed"),
+      overdueCount,
+      total,
+    }
   );
 
   const empCounts = empList.map((e) => tasksForDash.filter((t) => t.assigneeId === e.id).length);
