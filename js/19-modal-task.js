@@ -13,12 +13,12 @@ function renderTaskModal() {
 
   const canEdit = canEditTask(currentTask);
   const canDelete = canDeleteTask(currentTask);
-  const isManager = hasPermission('task:edit');
+  const isManager = hasPermission('task:edit', currentTask.departmentId);
   const overdue = isOverdue(currentTask);
   const isPic = currentUser && currentTask.assigneeId === currentUser.id;
+  const canEditNotes = canEditTaskNotes(currentTask);
   const canChangeStatus = canChangeTaskStatus(currentTask, currentTask.status);
-  const canClose = hasPermission('task:status_close');
-  const progressOpts = STATUS_OPTS.filter((s) => s.key !== 'closed');
+  const availableStatusOpts = isManager ? STATUS_OPTS : STATUS_OPTS.filter((s) => s.key !== 'closed');
   const st = statusInfo(currentTask.status);
 
   return `
@@ -54,8 +54,8 @@ function renderTaskModal() {
           </div>
           <div class="modal-field"><label class="field-label">${t("modal_status")}</label>
             ${
-              isPic && currentTask.status !== 'closed' && (!overdue || isManager)
-                ? `<select id="m-status">${progressOpts.map((s) => `<option value="${s.key}" ${s.key === currentTask.status ? "selected" : ""}>${s.label}</option>`).join("")}</select>`
+              (isManager || (isPic && currentTask.status !== 'closed' && !overdue))
+                ? `<select id="m-status">${availableStatusOpts.map((s) => `<option value="${s.key}" ${s.key === currentTask.status ? "selected" : ""}>${s.label}</option>`).join("")}</select>`
                 : `<input value="${escapeAttr(st.label)}" disabled style="color:var(--${st.color});font-weight:600;border-color:var(--${st.color})" />`
             }
           </div>
@@ -65,22 +65,15 @@ function renderTaskModal() {
           <div class="modal-field"><label class="field-label">Bộ phận</label><input value="${escapeAttr(dept ? dept.name : "")}" disabled /></div>
         </div>
         <div class="modal-grid full modal-field">
-          <div><label class="field-label">${t("form_notes")}</label><textarea id="m-notes" rows="3" ${!canEdit ? "disabled" : ""}>${escapeHtml(currentTask.notes || "")}</textarea></div>
+          <div><label class="field-label">${t("form_notes")}</label><textarea id="m-notes" rows="3" ${!canEditNotes ? "disabled" : ""}>${escapeHtml(currentTask.notes || "")}</textarea></div>
         </div>
         <div class="modal-actions">
           <div style="display:flex;align-items:center;gap:8px">
             ${canDelete ? `<button class="icon-btn danger" onclick="deleteTask('${currentTask.id}')" aria-label="Xoá công việc">${ic("trash")}</button>` : ""}
-            ${
-              canClose
-                ? (currentTask.status !== 'closed'
-                    ? `<button class="btn" style="border-color:var(--purple);color:var(--purple);display:flex;align-items:center;gap:6px" onclick="closeTask('${currentTask.id}');closeTaskModal()">${ic("lock")} ${t("btn_close_task")}</button>`
-                    : `<button class="btn" style="border-color:var(--teal);color:var(--teal);display:flex;align-items:center;gap:6px" onclick="reopenTask('${currentTask.id}');closeTaskModal()">${ic("unlock")} ${t("btn_reopen_task")}</button>`)
-                : ""
-            }
           </div>
           <div class="modal-actions-right">
             <button onclick="closeTaskModal()">${t("btn_cancel")}</button>
-            ${(canEdit || (isPic && currentTask.status !== 'closed' && (!overdue || isManager))) ? `<button class="btn-primary" onclick="saveTaskModal('${currentTask.id}')">${t("btn_save")}</button>` : ""}
+            ${(isManager || canEditNotes || (isPic && currentTask.status !== 'closed' && !overdue)) ? `<button class="btn-primary" onclick="saveTaskModal('${currentTask.id}')">${t("btn_save")}</button>` : ""}
           </div>
         </div>
       </div>
