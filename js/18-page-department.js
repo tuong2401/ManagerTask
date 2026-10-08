@@ -1,4 +1,4 @@
-﻿/* =====================================================================
+/* =====================================================================
    18-page-department.js — Trang BỘ PHẬN (Dashboard / Nhân viên / Task / Máy)
    
    ===================================================================== */
@@ -150,9 +150,9 @@ function renderDeptEmployeesTab(dept) {
                 `
           }
           ${
-            hasPermission("leave:approve") ||
-            (l.employeeId === currentUser.id && l.status === "pending")
-              ? `<button class="icon-btn danger" onclick="deleteLeave('${l.id}')">${ic("trash")}</button>`
+            (l.status === "pending" || l.status === "pending_director") &&
+            (l.employeeId === currentUser.id || hasPermission("leave:approve", l.departmentId))
+              ? `<button class="icon-btn danger" title="${t("btn_delete") || "Xoá"}" onclick="deleteLeave('${l.id}')">${ic("trash")}</button>`
               : ""
           }
         </div>
@@ -360,9 +360,12 @@ function renderDeptTasksTab(dept) {
                   const st = statusInfo(task.status);
                   const canEdit = canEditTask(task);
                   const canDelete = canDeleteTask(task);
+                  const isManager = hasPermission('task:edit', task.departmentId);
+                  const canEditNotes = canEditTaskNotes(task);
                   const isPic = currentUser && task.assigneeId === currentUser.id;
-                  const canClose = hasPermission('task:status_close');
-                  const progressOpts = STATUS_OPTS.filter((s) => s.key !== 'closed');
+                  const canChangeStatus = canChangeTaskStatus(task, task.status);
+                  // Quản lý được chọn tất cả trạng thái bao gồm closed. Nhân viên không có tuỳ chọn closed.
+                  const availableStatusOpts = isManager ? STATUS_OPTS : STATUS_OPTS.filter((s) => s.key !== 'closed');
                   return `
                   <tr data-task-id="${task.id}" style="${rowHeights[task.id] ? "height:" + rowHeights[task.id] + "px" : ""}">
                     <td class="col-title"><button class="task-title-btn" onclick="openTaskModal('${task.id}')">${escapeHtml(task.title)}</button></td>
@@ -370,26 +373,19 @@ function renderDeptTasksTab(dept) {
                     <td><span class="badge mono" style="color:var(--${prio.color});border-color:var(--${prio.color})">${prio.label}</span></td>
                     <td>
                       ${
-                        isPic && task.status !== 'closed' && (!overdue || hasPermission('task:edit'))
+                        (isManager || (isPic && task.status !== 'closed' && !overdue))
                           ? `<select class="status-select" style="color:var(--${st.color});border-color:var(--${st.color})" onchange="setStatus('${task.id}',this.value)">
-                              ${progressOpts.map((s) => `<option value="${s.key}" ${s.key === task.status ? "selected" : ""}>${s.label}</option>`).join("")}
+                              ${availableStatusOpts.map((s) => `<option value="${s.key}" ${s.key === task.status ? "selected" : ""}>${s.label}</option>`).join("")}
                             </select>`
                           : `<span class="badge mono" style="color:var(--${st.color});border-color:var(--${st.color})">${st.label}</span>`
                       }
                     </td>
-                    <td class="col-date"><input type="date" class="date-edit" ${!canEdit || !hasPermission('task:edit') ? "disabled" : ""} value="${task.startDate || ""}" onchange="updateField('${task.id}','startDate',this.value)" /></td>
-                    <td class="col-date"><input type="date" class="date-edit" ${!canEdit || !hasPermission('task:edit') ? "disabled" : ""} value="${task.endDate || ""}" onchange="updateField('${task.id}','endDate',this.value)" /></td>
-                    <td class="col-date ${overdue ? "overdue" : ""}"><input type="date" class="date-edit ${overdue ? "overdue" : ""}" ${!canEdit || !hasPermission('task:edit') ? "disabled" : ""} value="${task.deadline || ""}" onchange="updateField('${task.id}','deadline',this.value)" />${overdue ? " ⚠" : ""}</td>
-                    <td class="col-notes"><textarea class="notes-edit" rows="1" placeholder="${t("notes_placeholder")}" ${!canEdit ? "disabled" : ""} title="${escapeAttr(task.notes || "")}" onchange="updateField('${task.id}','notes',this.value)">${escapeHtml(task.notes || "")}</textarea></td>
+                    <td class="col-date"><input type="date" class="date-edit" ${!isManager ? "disabled" : ""} value="${task.startDate || ""}" onchange="updateField('${task.id}','startDate',this.value)" /></td>
+                    <td class="col-date"><input type="date" class="date-edit" ${!isManager ? "disabled" : ""} value="${task.endDate || ""}" onchange="updateField('${task.id}','endDate',this.value)" /></td>
+                    <td class="col-date ${overdue ? "overdue" : ""}"><input type="date" class="date-edit ${overdue ? "overdue" : ""}" ${!isManager ? "disabled" : ""} value="${task.deadline || ""}" onchange="updateField('${task.id}','deadline',this.value)" />${overdue ? " ⚠" : ""}</td>
+                    <td class="col-notes"><textarea class="notes-edit" rows="1" placeholder="${t("notes_placeholder")}" ${!canEditNotes ? "disabled" : ""} title="${escapeAttr(task.notes || "")}" onchange="updateField('${task.id}','notes',this.value)">${escapeHtml(task.notes || "")}</textarea></td>
                     <td><div class="actions-cell">
                       <span class="row-resizer" title="${t("drag_row_height")}" onmousedown="startRowResize(event,this)">${ic("grip")}</span>
-                      ${
-                        canClose
-                          ? (task.status !== 'closed'
-                              ? `<button class="icon-btn" onclick="closeTask('${task.id}')" title="${t("btn_close_task")}" style="color:var(--purple);border-color:var(--purple)">${ic("lock")}</button>`
-                              : `<button class="icon-btn" onclick="reopenTask('${task.id}')" title="${t("btn_reopen_task")}" style="color:var(--teal);border-color:var(--teal)">${ic("unlock")}</button>`)
-                          : ""
-                      }
                       ${canDelete ? `<button class="icon-btn danger" onclick="deleteTask('${task.id}')" aria-label="${t("btn_delete")}">${ic("trash")}</button>` : ""}
                     </div></td>
                   </tr>

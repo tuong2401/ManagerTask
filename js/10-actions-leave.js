@@ -58,14 +58,26 @@ async function setLeaveStatus(id, status) {
 async function deleteLeave(id) {
   const l = leaveRequests.find((x) => x.id === id);
   if (!l) return;
-  if (!hasPermission('leave:approve')) {
-    if (l.employeeId !== currentUser.id || l.status !== "pending") {
-      alert(t("err_perm_del_leave"));
-      return;
-    }
+
+  // 1. Chặn tuyệt đối xóa các đơn đã duyệt hoặc từ chối để giữ toàn vẹn lịch sử
+  if (l.status === "approved" || l.status === "rejected") {
+    alert(t("err_leave_finalized"));
+    return;
   }
-  
-  leaveRequests = leaveRequests.filter((l) => l.id !== id);
+
+  // 2. Với đơn đang chờ (pending / pending_director):
+  // Phải là người tạo đơn HOẶC người có quyền duyệt (Quản lý/Giám đốc)
+  const isOwner = l.employeeId === currentUser.id;
+  const canApprove = hasPermission('leave:approve', l.departmentId);
+  if (!isOwner && !canApprove) {
+    alert(t("err_perm_del_leave"));
+    return;
+  }
+
+  if (!confirm("Bạn có chắc chắn muốn xoá đơn xin nghỉ phép này?")) return;
+
+  leaveRequests = leaveRequests.filter((x) => x.id !== id);
   render();
   await saveData();
 }
+

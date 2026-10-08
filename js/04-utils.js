@@ -154,8 +154,14 @@ function isDeptReadOnly(deptId) {
 function canEditTask(task) {
   if (!currentUser || !task) return false;
   if (hasPermission('task:edit', task.departmentId)) return true;
-  // Nhân viên phụ trách (PIC) không được sửa nếu task đã quá hạn
-  if (isOverdue(task)) return false;
+  // Nhân viên không có quyền quản lý sẽ không được sửa các thông tin cơ bản
+  return false;
+}
+
+function canEditTaskNotes(task) {
+  if (!currentUser || !task) return false;
+  if (hasPermission('task:edit', task.departmentId)) return true;
+  // Nhân viên phụ trách (PIC) luôn được ghi chú bình thường (kể cả khi quá hạn hay bị closed)
   return task.assigneeId === currentUser.id;
 }
 
@@ -166,18 +172,21 @@ function canDeleteTask(task) {
 
 function canChangeTaskStatus(task, newStatus) {
   if (!currentUser || !task) return false;
-  // Đóng hoặc mở lại task đã đóng: Chỉ người có quyền 'task:status_close' (Quản lý)
-  if (newStatus === 'closed' || task.status === 'closed') {
-    return hasPermission('task:status_close');
+  // Quản lý có quyền task:edit/task:status_close có toàn quyền đổi mọi trạng thái (bao gồm closed)
+  if (hasPermission('task:edit', task.departmentId) || hasPermission('task:status_close', task.departmentId)) {
+    return true;
   }
-  // Các trạng thái tiến độ thông thường (todo, doing, pending, done):
-  // Nếu task quá hạn, nhân viên không được tự ý đổi trạng thái (chỉ Manager có quyền can thiệp)
-  if (isOverdue(task) && !hasPermission('task:edit')) {
-    return false;
-  }
+  // Nhân viên:
+  // Không được đổi sang trạng thái closed
+  if (newStatus === 'closed') return false;
+  // Nếu task đã ở trạng thái closed thì nhân viên không được đổi
+  if (task.status === 'closed') return false;
+  // Nếu task quá hạn, nhân viên không được tự ý đổi trạng thái
+  if (isOverdue(task)) return false;
   // Chỉ người phụ trách (PIC) mới có quyền cập nhật
   if (hasPermission('task:status_self') && task.assigneeId === currentUser.id) {
     return true;
   }
   return false;
 }
+

@@ -87,6 +87,12 @@ async function updateField(id, field, value) {
       render();
       return;
     }
+  } else if (field === 'notes') {
+    if (!canEditTaskNotes(t)) {
+      alert(t("err_perm_edit_task"));
+      render();
+      return;
+    }
   } else {
     if (!canEditTask(t)) {
       if (isOverdue(t) && !hasPermission('task:edit')) alert(t("err_task_overdue_locked"));
@@ -125,6 +131,8 @@ async function saveTaskModal(id) {
       t.endDate = document.getElementById("m-end").value;
       t.deadline = document.getElementById("m-deadline").value;
     }
+  }
+  if (canEditTaskNotes(t)) {
     const notesEl = document.getElementById("m-notes");
     if (notesEl) t.notes = notesEl.value;
   }
